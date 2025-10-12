@@ -120,3 +120,8 @@ def update_seller_view(request):
     else:
         form = SellerUpdateForm(instance=seller_user)
     return render(request, 'shop/update_seller.html', {'form': form})
+
+def customize_bracelet(request):
+    if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    return render(request, 'shop/customize_bracelet.html')

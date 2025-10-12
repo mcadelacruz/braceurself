@@ -10,4 +10,5 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('seller/dashboard/', views.seller_dashboard, name='seller_dashboard'),
     path('seller/update/', views.update_seller_view, name='update_seller'),
+    path('customize/', views.customize_bracelet, name='customize_bracelet'),
 ]

@@ -10,6 +10,7 @@
         <a href="{% url 'catalog' %}">Catalog</a> |
         {% if user.is_authenticated and not user.sellerprofile %}
             <a href="{% url 'order_list' %}">Orders</a> |
+            <a href="{% url 'customize_bracelet' %}">Customize Bracelet</a> |
         {% endif %}
         {% if user.is_authenticated %}
             {% if user.sellerprofile %}
