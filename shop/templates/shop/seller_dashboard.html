@@ -11,7 +11,7 @@
 <ul>
     {% for product in products %}
         <li>
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width:100px;max-height:100px;">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:60px;height:60px;object-fit:cover;">
             <strong>{{ product.name }}</strong> - ${{ product.price }}
         </li>
     {% empty %}
@@ -22,6 +22,7 @@
 <ul>
     {% for order in orders %}
         <li>
+            <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" style="width:40px;height:40px;object-fit:cover;">
             <strong>{{ order.product.name }}</strong> (x{{ order.quantity }})<br>
             Customer: {{ order.customer.username }}<br>
             Payment: {{ order.get_payment_type_display }}<br>

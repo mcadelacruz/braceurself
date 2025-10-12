@@ -8,6 +8,9 @@
             <strong>{{ order.product.name }}</strong> (x{{ order.quantity }})<br>
             Payment: {{ order.get_payment_type_display }}<br>
             Status: {{ order.get_status_display }}
+            {% if order.done %}
+                <span style="color:green;">(Done)</span>
+            {% endif %}
         </li>
     {% endfor %}
     </ul>

@@ -1,7 +1,7 @@
 {% extends 'shop/base.html' %}
 {% block content %}
 <h1>Order: {{ product.name }}</h1>
-<img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width:200px;max-height:200px;">
+<img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:80px;height:80px;object-fit:cover;">
 <p>Price: ${{ product.price }}</p>
 <form method="post">
     {% csrf_token %}

@@ -156,12 +156,22 @@ def manage_order(request, order_id):
     order = Order.objects.get(id=order_id)
     if request.method == 'POST':
         status = request.POST.get('status')
-        if status in dict(Order.STATUS_CHOICES):
+        mark_done = request.POST.get('mark_done')
+        updated = False
+        if status and status in dict(Order.STATUS_CHOICES):
             order.status = status
+            updated = True
+        if mark_done == 'on' and order.status == 'delivered':
+            order.done = True
+            updated = True
+        if updated:
             order.save()
-            messages.success(request, "Order status updated.")
+            messages.success(request, "Order updated.")
             return redirect('seller_dashboard')
-    return render(request, 'shop/manage_order.html', {'order': order, 'status_choices': Order.STATUS_CHOICES})
+    return render(request, 'shop/manage_order.html', {
+        'order': order,
+        'status_choices': Order.STATUS_CHOICES,
+    })
 
 def update_seller_view(request):
     seller_profile = SellerProfile.objects.first()
