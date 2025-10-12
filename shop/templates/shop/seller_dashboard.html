@@ -1,5 +1,35 @@
 {% extends 'shop/base.html' %}
 {% block content %}
 <h1>Seller Dashboard</h1>
-<p>Welcome, seller! Here you can track and manage orders.</p>
+<h2>Add Product</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Add Product</button>
+</form>
+<h2>Your Products</h2>
+<ul>
+    {% for product in products %}
+        <li>
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width:100px;max-height:100px;">
+            <strong>{{ product.name }}</strong> - ${{ product.price }}
+        </li>
+    {% empty %}
+        <li>No products yet.</li>
+    {% endfor %}
+</ul>
+<h2>Orders</h2>
+<ul>
+    {% for order in orders %}
+        <li>
+            <strong>{{ order.product.name }}</strong> (x{{ order.quantity }})<br>
+            Customer: {{ order.customer.username }}<br>
+            Payment: {{ order.get_payment_type_display }}<br>
+            Status: {{ order.get_status_display }}<br>
+            <a href="{% url 'manage_order' order.id %}">Manage</a>
+        </li>
+    {% empty %}
+        <li>No orders yet.</li>
+    {% endfor %}
+</ul>
 {% endblock %}

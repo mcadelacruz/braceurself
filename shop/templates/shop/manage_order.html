@@ -1,0 +1,20 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<h1>Manage Order #{{ order.id }}</h1>
+<p>Product: {{ order.product.name }}</p>
+<p>Customer: {{ order.customer.username }}</p>
+<p>Quantity: {{ order.quantity }}</p>
+<p>Payment Type: {{ order.get_payment_type_display }}</p>
+<p>Status: {{ order.get_status_display }}</p>
+<form method="post">
+    {% csrf_token %}
+    <label for="status">Update Status:</label>
+    <select name="status" id="status">
+        {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Update</button>
+</form>
+<p><a href="{% url 'seller_dashboard' %}">Back to Dashboard</a></p>
+{% endblock %}

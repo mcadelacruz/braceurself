@@ -2,18 +2,33 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
-from .models import SellerProfile
-from django.contrib.auth.models import User
+from .models import SellerProfile, Product, Order
 from django import forms
+from django.forms import ModelForm
+from django.contrib.auth.models import User
 
 def home(request):
     return render(request, 'shop/home.html')
 
+class ProductForm(ModelForm):
+    class Meta:
+        model = Product
+        fields = ['name', 'price', 'image']
+
+class OrderForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ['quantity', 'payment_type']
+
 def catalog(request):
-    return render(request, 'shop/catalog.html')
+    products = Product.objects.all()
+    return render(request, 'shop/catalog.html', {'products': products})
 
 def order_list(request):
-    return render(request, 'shop/order_list.html')
+    if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+    return render(request, 'shop/order_list.html', {'orders': orders})
 
 def login_register(request):
     return render(request, 'shop/login_register.html')
@@ -98,7 +113,55 @@ def logout_view(request):
 def seller_dashboard(request):
     if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
         return redirect('login')
-    return render(request, 'shop/seller_dashboard.html')
+    seller_profile = request.user.sellerprofile
+    products = Product.objects.filter(created_by=seller_profile)
+    orders = Order.objects.filter(product__created_by=seller_profile).order_by('-created_at')
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.created_by = seller_profile
+            product.save()
+            messages.success(request, "Product added!")
+            return redirect('seller_dashboard')
+    else:
+        form = ProductForm()
+    return render(request, 'shop/seller_dashboard.html', {
+        'form': form,
+        'products': products,
+        'orders': orders,
+    })
+
+def product_order(request, product_id):
+    if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    product = Product.objects.get(id=product_id)
+    if request.method == 'POST':
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.customer = request.user
+            order.product = product
+            order.status = 'pending'
+            order.save()
+            messages.success(request, "Order placed!")
+            return redirect('order_list')
+    else:
+        form = OrderForm()
+    return render(request, 'shop/product_order.html', {'product': product, 'form': form})
+
+def manage_order(request, order_id):
+    if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    order = Order.objects.get(id=order_id)
+    if request.method == 'POST':
+        status = request.POST.get('status')
+        if status in dict(Order.STATUS_CHOICES):
+            order.status = status
+            order.save()
+            messages.success(request, "Order status updated.")
+            return redirect('seller_dashboard')
+    return render(request, 'shop/manage_order.html', {'order': order, 'status_choices': Order.STATUS_CHOICES})
 
 def update_seller_view(request):
     seller_profile = SellerProfile.objects.first()
