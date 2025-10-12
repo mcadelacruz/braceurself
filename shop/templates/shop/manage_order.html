@@ -6,21 +6,35 @@
 <p>Quantity: {{ order.quantity }}</p>
 <p>Payment Type: {{ order.get_payment_type_display }}</p>
 <p>Status: {{ order.get_status_display }}</p>
+{% if order.cancelled %}
+    <p style="color:red;"><strong>Order Cancelled</strong></p>
+    <p><strong>Reason:</strong> {{ order.cancel_reason }}</p>
+{% endif %} {% if error %}
+    <p style="color:red;">{{ error }}</p>
+{% endif %}
 <form method="post">
     {% csrf_token %}
     <label for="status">Update Status:</label>
-    <select name="status" id="status">
+    <select name="status" id="status" {% if order.cancelled %}disabled{% endif %}>
         {% for value, label in status_choices %}
             <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
     </select>
     <br><br>
     <label>
-        <input type="checkbox" name="mark_done" {% if order.status != 'delivered' %}disabled{% endif %} {% if order.done %}checked{% endif %}>
+        <input type="checkbox" name="mark_done" {% if order.status != 'delivered' or order.cancelled %}disabled{% endif %} {% if order.done %}checked{% endif %}>
         Mark as Done
     </label>
+    <br><br>
+    <label>
+        <input type="checkbox" name="cancel_order" {% if order.cancelled %}disabled checked{% endif %}>
+        Cancel Order
+    </label>
     <br>
-    <button type="submit">Update</button>
+    <label for="cancel_reason">Reason for cancellation:</label><br>
+    <textarea name="cancel_reason" id="cancel_reason" rows="2" cols="40" {% if order.cancelled %}readonly{% endif %}>{{ order.cancel_reason }}</textarea>
+    <br>
+    <button type="submit" {% if order.cancelled %}disabled{% endif %}>Update</button>
 </form>
 <p><a href="{% url 'seller_dashboard' %}">Back to Dashboard</a></p>
 {% endblock %}

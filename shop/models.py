@@ -34,7 +34,9 @@ class Order(models.Model):
     payment_type = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
-    done = models.BooleanField(default=False)  # <-- add this field
+    done = models.BooleanField(default=False)
+    cancelled = models.BooleanField(default=False)
+    cancel_reason = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Order #{self.id} - {self.product.name} ({self.customer.username})"

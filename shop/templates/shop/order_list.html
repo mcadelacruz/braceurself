@@ -11,6 +11,10 @@
             {% if order.done %}
                 <span style="color:green;">(Done)</span>
             {% endif %}
+            {% if order.cancelled %}
+                <span style="color:red;">(Cancelled)</span><br>
+                <strong>Reason:</strong> {{ order.cancel_reason }}
+            {% endif %}
         </li>
     {% endfor %}
     </ul>

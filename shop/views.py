@@ -175,23 +175,37 @@ def manage_order(request, order_id):
     if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
         return redirect('login')
     order = Order.objects.get(id=order_id)
+    error = None
     if request.method == 'POST':
         status = request.POST.get('status')
         mark_done = request.POST.get('mark_done')
+        cancel_order = request.POST.get('cancel_order')
+        cancel_reason = request.POST.get('cancel_reason')
         updated = False
         if status and status in dict(Order.STATUS_CHOICES):
             order.status = status
             updated = True
-        if mark_done == 'on' and order.status == 'delivered':
+        if mark_done == 'on' and order.status == 'delivered' and not order.cancelled:
             order.done = True
             updated = True
-        if updated:
+        if cancel_order == 'on' and not order.cancelled:
+            if cancel_reason and cancel_reason.strip():
+                order.cancelled = True
+                order.cancel_reason = cancel_reason.strip()
+                # Restore stock
+                order.product.stock += order.quantity
+                order.product.save()
+                updated = True
+            else:
+                error = "Please provide a reason for cancellation."
+        if updated and not error:
             order.save()
             messages.success(request, "Order updated.")
             return redirect('seller_dashboard')
     return render(request, 'shop/manage_order.html', {
         'order': order,
         'status_choices': Order.STATUS_CHOICES,
+        'error': error,
     })
 
 def update_seller_view(request):
