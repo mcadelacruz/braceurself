@@ -4,6 +4,13 @@
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
+    <label>
+        <input type="checkbox" name="is_seller" {% if seller_exists %}disabled{% endif %}>
+        Register as Seller
+    </label>
+    {% if seller_exists %}
+        <p><em>Seller account already exists. Registering as seller will update the seller credentials.</em></p>
+    {% endif %}
     <button type="submit">Register</button>
 </form>
 <p>Already have an account? <a href="{% url 'login' %}">Login here</a>.</p>

@@ -4,6 +4,10 @@
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
+    <label>
+        <input type="checkbox" name="is_seller">
+        Login as Seller
+    </label>
     <button type="submit">Login</button>
 </form>
 <p>Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
