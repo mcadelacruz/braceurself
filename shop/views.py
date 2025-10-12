@@ -161,7 +161,7 @@ def product_order(request, product_id):
                 order = form.save(commit=False)
                 order.customer = request.user
                 order.product = product
-                order.status = 'pending'
+                order.status = 'waiting'  # set default status
                 order.save()
                 product.stock -= quantity
                 product.save()

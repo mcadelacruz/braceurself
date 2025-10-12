@@ -18,6 +18,7 @@ class Product(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = [
+        ('waiting', 'Waiting for Payment'),
         ('pending', 'Pending Creation'),
         ('created', 'Finished Creating the Bracelet'),
         ('delivering', 'Bracelet is Being Delivered'),
@@ -32,7 +33,7 @@ class Order(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     payment_type = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='waiting')
     created_at = models.DateTimeField(auto_now_add=True)
     done = models.BooleanField(default=False)
     cancelled = models.BooleanField(default=False)
