@@ -25,9 +25,8 @@ class Order(models.Model):
         ('delivered', 'Bracelet Delivered'),
     ]
     PAYMENT_CHOICES = [
-        ('credit_card', 'Credit Card'),
-        ('paypal', 'PayPal'),
-        ('cod', 'Cash on Delivery'),
+        ('gcash', 'GCash'),
+        ('maya', 'Maya'),
     ]
     customer = models.ForeignKey(User, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
