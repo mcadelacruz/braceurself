@@ -1,15 +1,29 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h1>Order: {{ product.name }}</h1>
-<img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:80px;height:80px;object-fit:cover;">
-<p>Price: ${{ product.price }}</p>
-<p>Stock: {{ product.stock }}</p>
-{% if error %}
-    <p style="color:red;">{{ error }}</p>
-{% endif %}
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" {% if product.stock <= 0 %}disabled{% endif %}>Place Order</button>
-</form>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="width:100%;height:160px;object-fit:cover;">
+            {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:160px;">
+                    <span class="text-muted">No image</span>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <h3 class="card-title">{{ product.name }}</h3>
+                <p class="card-text">Price: ${{ product.price }}</p>
+                <p class="card-text">Stock: {{ product.stock }}</p>
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-success" {% if product.stock <= 0 %}disabled{% endif %}>Place Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

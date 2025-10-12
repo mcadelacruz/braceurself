@@ -1,43 +1,69 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h1>Seller Dashboard</h1>
-<h2>Add Product</h2>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Add Product</button>
-</form>
-<h2>Your Products</h2>
-<ul>
-    {% for product in products %}
-        <li>
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:60px;height:60px;object-fit:cover;">
-            <strong>{{ product.name }}</strong> - ${{ product.price }}<br>
-            Stock: {{ product.stock }}
-            <form method="post" style="display:inline;">
-                {% csrf_token %}
-                <input type="hidden" name="product_id" value="{{ product.id }}">
-                <input type="number" name="new_stock" min="0" value="{{ product.stock }}" style="width:60px;">
-                <button type="submit" name="update_stock">Update Stock</button>
-            </form>
-        </li>
-    {% empty %}
-        <li>No products yet.</li>
-    {% endfor %}
-</ul>
-<h2>Orders</h2>
-<ul>
-    {% for order in orders %}
-        <li>
-            <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" style="width:40px;height:40px;object-fit:cover;">
-            <strong>{{ order.product.name }}</strong> (x{{ order.quantity }})<br>
-            Customer: {{ order.customer.username }}<br>
-            Payment: {{ order.get_payment_type_display }}<br>
-            Status: {{ order.get_status_display }}<br>
-            <a href="{% url 'manage_order' order.id %}">Manage</a>
-        </li>
-    {% empty %}
-        <li>No orders yet.</li>
-    {% endfor %}
-</ul>
+<h1 class="mb-4">Seller Dashboard</h1>
+<div class="row">
+    <div class="col-md-6">
+        <h2>Add Product</h2>
+        <form method="post" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Add Product</button>
+        </form>
+        <h2>Your Products</h2>
+        <ul class="list-group">
+            {% for product in products %}
+                <li class="list-group-item d-flex align-items-center">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:40px;height:40px;object-fit:cover;" class="me-2 rounded">
+                    {% else %}
+                        <div class="me-2 rounded bg-light d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                            <span class="text-muted">No image</span>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <strong>{{ product.name }}</strong> - ${{ product.price }}<br>
+                        Stock: {{ product.stock }}
+                    </div>
+                    <form method="post" class="ms-auto d-flex align-items-center">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="number" name="new_stock" min="0" value="{{ product.stock }}" class="form-control form-control-sm me-2" style="width:80px;">
+                        <button type="submit" name="update_stock" class="btn btn-outline-secondary btn-sm">Update Stock</button>
+                    </form>
+                </li>
+            {% empty %}
+                <li class="list-group-item">No products yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <h2>Orders</h2>
+        <ul class="list-group">
+            {% for order in orders %}
+                <li class="list-group-item">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            {% if order.product.image %}
+                                <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" style="width:40px;height:40px;object-fit:cover;" class="rounded">
+                            {% else %}
+                                <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                    <span class="text-muted">No image</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <strong>{{ order.product.name }}</strong> (x{{ order.quantity }})<br>
+                            Customer: {{ order.customer.username }}<br>
+                            Payment: {{ order.get_payment_type_display }}<br>
+                            Status: {{ order.get_status_display }}<br>
+                            <a href="{% url 'manage_order' order.id %}" class="btn btn-sm btn-outline-primary mt-2">Manage</a>
+                        </div>
+                    </div>
+                </li>
+            {% empty %}
+                <li class="list-group-item">No orders yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
 {% endblock %}

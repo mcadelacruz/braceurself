@@ -1,14 +1,18 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h1>Login</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <label>
-        <input type="checkbox" name="is_seller">
-        Login as Seller
-    </label>
-    <button type="submit">Login</button>
-</form>
-<p>Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h1 class="mb-4">Login</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" name="is_seller" id="is_seller">
+                <label class="form-check-label" for="is_seller">Login as Seller</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p>Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
+    </div>
+</div>
 {% endblock %}

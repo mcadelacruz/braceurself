@@ -1,40 +1,49 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h1>Manage Order #{{ order.id }}</h1>
-<p>Product: {{ order.product.name }}</p>
-<p>Customer: {{ order.customer.username }}</p>
-<p>Quantity: {{ order.quantity }}</p>
-<p>Payment Type: {{ order.get_payment_type_display }}</p>
-<p>Status: {{ order.get_status_display }}</p>
-{% if order.cancelled %}
-    <p style="color:red;"><strong>Order Cancelled</strong></p>
-    <p><strong>Reason:</strong> {{ order.cancel_reason }}</p>
-{% endif %} {% if error %}
-    <p style="color:red;">{{ error }}</p>
-{% endif %}
-<form method="post">
-    {% csrf_token %}
-    <label for="status">Update Status:</label>
-    <select name="status" id="status" {% if order.cancelled %}disabled{% endif %}>
-        {% for value, label in status_choices %}
-            <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-    </select>
-    <br><br>
-    <label>
-        <input type="checkbox" name="mark_done" {% if order.status != 'delivered' or order.cancelled %}disabled{% endif %} {% if order.done %}checked{% endif %}>
-        Mark as Done
-    </label>
-    <br><br>
-    <label>
-        <input type="checkbox" name="cancel_order" {% if order.cancelled %}disabled checked{% endif %}>
-        Cancel Order
-    </label>
-    <br>
-    <label for="cancel_reason">Reason for cancellation:</label><br>
-    <textarea name="cancel_reason" id="cancel_reason" rows="2" cols="40" {% if order.cancelled %}readonly{% endif %}>{{ order.cancel_reason }}</textarea>
-    <br>
-    <button type="submit" {% if order.cancelled %}disabled{% endif %}>Update</button>
-</form>
-<p><a href="{% url 'seller_dashboard' %}">Back to Dashboard</a></p>
+<div class="card mt-4">
+    <div class="card-header">
+        <h4>Manage Order #{{ order.id }}</h4>
+    </div>
+    <div class="card-body">
+        <p><strong>Product:</strong> {{ order.product.name }}</p>
+        <p><strong>Customer:</strong> {{ order.customer.username }}</p>
+        <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+        <p><strong>Payment Type:</strong> {{ order.get_payment_type_display }}</p>
+        <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+        {% if order.cancelled %}
+            <div class="alert alert-danger"><strong>Order Cancelled</strong><br>Reason: {{ order.cancel_reason }}</div>
+        {% endif %} {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="status" class="form-label">Update Status:</label>
+                <select name="status" id="status" class="form-select" {% if order.cancelled %}disabled{% endif %}>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" name="mark_done" id="mark_done"
+                    {% if order.status != 'delivered' or order.cancelled %}disabled{% endif %}
+                    {% if order.done %}checked{% endif %}>
+                <label class="form-check-label" for="mark_done">Mark as Done</label>
+            </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" name="cancel_order" id="cancel_order"
+                    {% if order.cancelled %}disabled checked{% endif %}>
+                <label class="form-check-label" for="cancel_order">Cancel Order</label>
+            </div>
+            <div class="mb-3">
+                <label for="cancel_reason" class="form-label">Reason for cancellation:</label>
+                <textarea name="cancel_reason" id="cancel_reason" rows="2" class="form-control"
+                    {% if order.cancelled %}readonly{% endif %}>{{ order.cancel_reason }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" {% if order.cancelled %}disabled{% endif %}>Update</button>
+        </form>
+        <a href="{% url 'seller_dashboard' %}" class="btn btn-link mt-3">Back to Dashboard</a>
+    </div>
+</div>
 {% endblock %}
