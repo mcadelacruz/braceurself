@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
-from .models import SellerProfile, Product, Order
+from .models import SellerProfile, Product, Order, OrderMessage
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.models import User
+from django.core.files.storage import default_storage
 
 def home(request):
     return render(request, 'shop/home.html')
@@ -20,6 +21,11 @@ class OrderForm(forms.ModelForm):
         model = Order
         fields = ['quantity', 'payment_type']
 
+class OrderMessageForm(forms.ModelForm):
+    class Meta:
+        model = OrderMessage
+        fields = ['text', 'image']
+
 def catalog(request):
     products = Product.objects.all()
     return render(request, 'shop/catalog.html', {'products': products})
@@ -27,8 +33,20 @@ def catalog(request):
 def order_list(request):
     if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
         return redirect('login')
+    if request.method == 'POST':
+        order_id = request.POST.get('order_id')
+        order = Order.objects.get(id=order_id, customer=request.user)
+        msg_form = OrderMessageForm(request.POST, request.FILES)
+        if msg_form.is_valid():
+            msg = msg_form.save(commit=False)
+            msg.order = order
+            msg.sender = request.user
+            msg.save()
+            messages.success(request, "Message sent.")
+            return redirect('order_list')
     orders = Order.objects.filter(customer=request.user).order_by('-created_at')
-    return render(request, 'shop/order_list.html', {'orders': orders})
+    msg_forms = {order.id: OrderMessageForm() for order in orders}
+    return render(request, 'shop/order_list.html', {'orders': orders, 'msg_forms': msg_forms})
 
 def login_register(request):
     return render(request, 'shop/login_register.html')
@@ -198,14 +216,26 @@ def manage_order(request, order_id):
                 updated = True
             else:
                 error = "Please provide a reason for cancellation."
+        if 'send_message' in request.POST:
+            msg_form = OrderMessageForm(request.POST, request.FILES)
+            if msg_form.is_valid():
+                msg = msg_form.save(commit=False)
+                msg.order = order
+                msg.sender = request.user
+                msg.save()
+                messages.success(request, "Message sent.")
+                return redirect('manage_order', order_id=order.id)
         if updated and not error:
             order.save()
             messages.success(request, "Order updated.")
             return redirect('seller_dashboard')
+    else:
+        msg_form = OrderMessageForm()
     return render(request, 'shop/manage_order.html', {
         'order': order,
         'status_choices': Order.STATUS_CHOICES,
         'error': error,
+        'msg_form': msg_form,
     })
 
 def update_seller_view(request):

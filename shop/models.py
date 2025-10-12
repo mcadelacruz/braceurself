@@ -40,3 +40,13 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - {self.product.name} ({self.customer.username})"
+
+class OrderMessage(models.Model):
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField(blank=True)
+    image = models.ImageField(upload_to='order_messages/', blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message for Order #{self.order.id} by {self.sender.username}"

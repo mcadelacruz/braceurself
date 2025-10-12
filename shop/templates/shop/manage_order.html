@@ -5,45 +5,91 @@
         <h4>Manage Order #{{ order.id }}</h4>
     </div>
     <div class="card-body">
-        <p><strong>Product:</strong> {{ order.product.name }}</p>
-        <p><strong>Customer:</strong> {{ order.customer.username }}</p>
-        <p><strong>Quantity:</strong> {{ order.quantity }}</p>
-        <p><strong>Payment Type:</strong> {{ order.get_payment_type_display }}</p>
-        <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-        {% if order.cancelled %}
-            <div class="alert alert-danger"><strong>Order Cancelled</strong><br>Reason: {{ order.cancel_reason }}</div>
-        {% endif %} {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="status" class="form-label">Update Status:</label>
-                <select name="status" id="status" class="form-select" {% if order.cancelled %}disabled{% endif %}>
-                    {% for value, label in status_choices %}
-                        <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
+        <div class="row align-items-start">
+            <div class="col-md-7 d-flex flex-column align-items-center">
+                {% if order.product.image %}
+                    <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}"
+                         class="mb-3 rounded"
+                         style="width:100%;max-width:100%;height:220px;object-fit:cover;display:block;">
+                {% else %}
+                    <div class="mb-3 rounded bg-light d-flex align-items-center justify-content-center"
+                         style="width:100%;height:220px;">
+                        <span class="text-muted">No image</span>
+                    </div>
+                {% endif %}
+                <div class="w-100">
+                    <p><strong>Product:</strong> {{ order.product.name }}</p>
+                    <p><strong>Customer:</strong> {{ order.customer.username }}</p>
+                    <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                    <p><strong>Payment Type:</strong> {{ order.get_payment_type_display }}</p>
+                    <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                    {% if order.done %}
+                        <span class="badge bg-success">Done</span>
+                    {% endif %}
+                    {% if order.cancelled %}
+                        <div class="alert alert-danger mt-2"><strong>Order Cancelled</strong><br>Reason: {{ order.cancel_reason }}</div>
+                    {% endif %}
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
+                </div>
+                <form method="post" class="w-100">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Update Status:</label>
+                        <select name="status" id="status" class="form-select" {% if order.cancelled %}disabled{% endif %}>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" name="mark_done" id="mark_done"
+                            {% if order.status != 'delivered' or order.cancelled %}disabled{% endif %}
+                            {% if order.done %}checked{% endif %}>
+                        <label class="form-check-label" for="mark_done">Mark as Done</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" name="cancel_order" id="cancel_order"
+                            {% if order.cancelled %}disabled checked{% endif %}>
+                        <label class="form-check-label" for="cancel_order">Cancel Order</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">Reason for cancellation:</label>
+                        <textarea name="cancel_reason" id="cancel_reason" rows="2" class="form-control"
+                            {% if order.cancelled %}readonly{% endif %}>{{ order.cancel_reason }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" {% if order.cancelled %}disabled{% endif %}>Update</button>
+                </form>
+                <a href="{% url 'seller_dashboard' %}" class="btn btn-link mt-3">Back to Dashboard</a>
             </div>
-            <div class="form-check mb-3">
-                <input type="checkbox" class="form-check-input" name="mark_done" id="mark_done"
-                    {% if order.status != 'delivered' or order.cancelled %}disabled{% endif %}
-                    {% if order.done %}checked{% endif %}>
-                <label class="form-check-label" for="mark_done">Mark as Done</label>
+            <div class="col-md-5 border-start d-flex flex-column" style="height:100%;">
+                <div class="ps-3 d-flex flex-column h-100" style="height:100%;">
+                    <h6 class="mb-2">Messages</h6>
+                    <div class="flex-grow-1" style="min-height:220px;max-height:400px;overflow-y:auto;background:#f8f9fa;padding:8px;border-radius:6px;">
+                        {% for msg in order.messages.all %}
+                            <div class="mb-2 {% if msg.sender == user %}text-end{% endif %}">
+                                <small class="text-muted">{{ msg.sender.username }} ({{ msg.timestamp|date:"Y-m-d H:i" }})</small><br>
+                                {% if msg.text %}
+                                    <span class="badge bg-secondary">{{ msg.text }}</span>
+                                {% endif %}
+                                {% if msg.image %}
+                                    <br><img src="{{ msg.image.url }}" style="max-width:220px;max-height:220px;" class="rounded mt-1">
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <span class="text-muted">No messages yet.</span>
+                        {% endfor %}
+                    </div>
+                    <form method="post" enctype="multipart/form-data" class="mt-2 d-flex align-items-center gap-2">
+                        {% csrf_token %}
+                        <input type="text" name="text" class="form-control form-control-sm" placeholder="Type message...">
+                        <input type="file" name="image" class="form-control form-control-sm">
+                        <button type="submit" name="send_message" class="btn btn-sm btn-outline-primary">Send</button>
+                    </form>
+                </div>
             </div>
-            <div class="form-check mb-3">
-                <input type="checkbox" class="form-check-input" name="cancel_order" id="cancel_order"
-                    {% if order.cancelled %}disabled checked{% endif %}>
-                <label class="form-check-label" for="cancel_order">Cancel Order</label>
-            </div>
-            <div class="mb-3">
-                <label for="cancel_reason" class="form-label">Reason for cancellation:</label>
-                <textarea name="cancel_reason" id="cancel_reason" rows="2" class="form-control"
-                    {% if order.cancelled %}readonly{% endif %}>{{ order.cancel_reason }}</textarea>
-            </div>
-            <button type="submit" class="btn btn-primary" {% if order.cancelled %}disabled{% endif %}>Update</button>
-        </form>
-        <a href="{% url 'seller_dashboard' %}" class="btn btn-link mt-3">Back to Dashboard</a>
+        </div>
     </div>
 </div>
 {% endblock %}
