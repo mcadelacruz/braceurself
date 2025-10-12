@@ -11,6 +11,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2)
     image = models.ImageField(upload_to='product_images/')
     created_by = models.ForeignKey(SellerProfile, on_delete=models.CASCADE)
+    stock = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name

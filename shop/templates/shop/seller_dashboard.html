@@ -12,7 +12,14 @@
     {% for product in products %}
         <li>
             <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:60px;height:60px;object-fit:cover;">
-            <strong>{{ product.name }}</strong> - ${{ product.price }}
+            <strong>{{ product.name }}</strong> - ${{ product.price }}<br>
+            Stock: {{ product.stock }}
+            <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="number" name="new_stock" min="0" value="{{ product.stock }}" style="width:60px;">
+                <button type="submit" name="update_stock">Update Stock</button>
+            </form>
         </li>
     {% empty %}
         <li>No products yet.</li>

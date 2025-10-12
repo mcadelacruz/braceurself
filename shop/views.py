@@ -13,7 +13,7 @@ def home(request):
 class ProductForm(ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'price', 'image']
+        fields = ['name', 'price', 'image', 'stock']
 
 class OrderForm(forms.ModelForm):
     class Meta:
@@ -117,13 +117,25 @@ def seller_dashboard(request):
     products = Product.objects.filter(created_by=seller_profile)
     orders = Order.objects.filter(product__created_by=seller_profile).order_by('-created_at')
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            product = form.save(commit=False)
-            product.created_by = seller_profile
-            product.save()
-            messages.success(request, "Product added!")
+        if 'update_stock' in request.POST:
+            product_id = request.POST.get('product_id')
+            new_stock = request.POST.get('new_stock')
+            try:
+                product = Product.objects.get(id=product_id, created_by=seller_profile)
+                product.stock = int(new_stock)
+                product.save()
+                messages.success(request, f"Stock updated for {product.name}!")
+            except Exception:
+                messages.error(request, "Failed to update stock.")
             return redirect('seller_dashboard')
+        else:
+            form = ProductForm(request.POST, request.FILES)
+            if form.is_valid():
+                product = form.save(commit=False)
+                product.created_by = seller_profile
+                product.save()
+                messages.success(request, "Product added!")
+                return redirect('seller_dashboard')
     else:
         form = ProductForm()
     return render(request, 'shop/seller_dashboard.html', {
@@ -136,19 +148,28 @@ def product_order(request, product_id):
     if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
         return redirect('login')
     product = Product.objects.get(id=product_id)
-    if request.method == 'POST':
+    error = None
+    if product.stock <= 0:
+        error = "This product is out of stock."
+    if request.method == 'POST' and not error:
         form = OrderForm(request.POST)
         if form.is_valid():
-            order = form.save(commit=False)
-            order.customer = request.user
-            order.product = product
-            order.status = 'pending'
-            order.save()
-            messages.success(request, "Order placed!")
-            return redirect('order_list')
+            quantity = form.cleaned_data['quantity']
+            if quantity > product.stock:
+                error = "Not enough stock available."
+            else:
+                order = form.save(commit=False)
+                order.customer = request.user
+                order.product = product
+                order.status = 'pending'
+                order.save()
+                product.stock -= quantity
+                product.save()
+                messages.success(request, "Order placed!")
+                return redirect('order_list')
     else:
         form = OrderForm()
-    return render(request, 'shop/product_order.html', {'product': product, 'form': form})
+    return render(request, 'shop/product_order.html', {'product': product, 'form': form, 'error': error})
 
 def manage_order(request, order_id):
     if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):

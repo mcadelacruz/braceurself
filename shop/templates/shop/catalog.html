@@ -6,9 +6,12 @@
     {% for product in products %}
         <li>
             <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:60px;height:60px;object-fit:cover;">
-            <strong>{{ product.name }}</strong> - ${{ product.price }}
-            {% if user.is_authenticated and not user.sellerprofile %}
+            <strong>{{ product.name }}</strong> - ${{ product.price }}<br>
+            Stock: {{ product.stock }}
+            {% if user.is_authenticated and not user.sellerprofile and product.stock > 0 %}
                 <a href="{% url 'product_order' product.id %}">Order</a>
+            {% elif product.stock <= 0 %}
+                <span style="color:red;">Out of stock</span>
             {% endif %}
         </li>
     {% endfor %}

@@ -3,9 +3,13 @@
 <h1>Order: {{ product.name }}</h1>
 <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:80px;height:80px;object-fit:cover;">
 <p>Price: ${{ product.price }}</p>
+<p>Stock: {{ product.stock }}</p>
+{% if error %}
+    <p style="color:red;">{{ error }}</p>
+{% endif %}
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Place Order</button>
+    <button type="submit" {% if product.stock <= 0 %}disabled{% endif %}>Place Order</button>
 </form>
 {% endblock %}
