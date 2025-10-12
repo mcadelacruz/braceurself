@@ -4,6 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
 from .models import SellerProfile
 from django.contrib.auth.models import User
+from django import forms
 
 def home(request):
     return render(request, 'shop/home.html')
@@ -46,6 +47,22 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'shop/login.html', {'form': form})
 
+class SellerUpdateForm(forms.ModelForm):
+    password1 = forms.CharField(label='New password', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        fields = ['username']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            self.add_error('password2', "Passwords do not match.")
+        return cleaned_data
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -54,20 +71,16 @@ def register_view(request):
         form = UserCreationForm(request.POST)
         is_seller = request.POST.get('is_seller') == 'on'
         if form.is_valid():
-            if is_seller:
-                if seller_exists:
-                    # Update existing seller credentials
-                    seller_profile = SellerProfile.objects.first()
-                    seller_user = seller_profile.user
-                    seller_user.username = form.cleaned_data['username']
-                    seller_user.set_password(form.cleaned_data['password1'])
-                    seller_user.save()
-                    login(request, seller_user)
-                else:
-                    user = form.save()
-                    SellerProfile.objects.create(user=user)
-                    login(request, user)
-                    return redirect('seller_dashboard')
+            if is_seller and not seller_exists:
+                user = form.save()
+                user.is_superuser = True
+                user.is_staff = True
+                user.save()
+                SellerProfile.objects.create(user=user)
+                login(request, user)
+                return redirect('seller_dashboard')
+            elif is_seller and seller_exists:
+                messages.error(request, "Seller account already exists.")
             else:
                 user = form.save()
                 login(request, user)
@@ -86,3 +99,24 @@ def seller_dashboard(request):
     if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
         return redirect('login')
     return render(request, 'shop/seller_dashboard.html')
+
+def update_seller_view(request):
+    seller_profile = SellerProfile.objects.first()
+    if not seller_profile:
+        return redirect('register')
+    seller_user = seller_profile.user
+    if request.method == 'POST':
+        form = SellerUpdateForm(request.POST, instance=seller_user)
+        if form.is_valid():
+            seller_user.username = form.cleaned_data['username']
+            seller_user.set_password(form.cleaned_data['password1'])
+            seller_user.is_superuser = True
+            seller_user.is_staff = True
+            seller_user.save()
+            messages.success(request, "Seller credentials updated successfully.")
+            return redirect('login')
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = SellerUpdateForm(instance=seller_user)
+    return render(request, 'shop/update_seller.html', {'form': form})
