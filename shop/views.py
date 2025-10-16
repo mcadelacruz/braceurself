@@ -203,6 +203,158 @@ def seller_dashboard(request):
     total_completed = completed_qs.count()
     total_cancelled = orders_qs.filter(cancelled=True).count()
 
+    # Earnings per period
+    earnings_today = completed_qs.filter(created_at__date=today).aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    ).get('total') or Decimal('0.00')
+    earnings_last_7 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=7)).aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    ).get('total') or Decimal('0.00')
+    earnings_last_30 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=30)).aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    ).get('total') or Decimal('0.00')
+
+    # Completed and Cancelled orders per period
+    completed_today = completed_qs.filter(created_at__date=today).count()
+    completed_last_7 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=7)).count()
+    completed_last_30 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=30)).count()
+
+    cancelled_today = orders_qs.filter(cancelled=True, created_at__date=today).count()
+    cancelled_last_7 = orders_qs.filter(cancelled=True, created_at__gte=now - datetime.timedelta(days=7)).count()
+    cancelled_last_30 = orders_qs.filter(cancelled=True, created_at__gte=now - datetime.timedelta(days=30)).count()
+
+    earnings_agg = completed_qs.aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    )
+    total_earnings = earnings_agg.get('total') or Decimal('0.00')
+
+    avg_order_value = (total_earnings / total_completed) if total_completed else Decimal('0.00')
+
+    top_products = list(
+        orders_qs.values('product__id', 'product__name')
+        .annotate(total_qty=Sum('quantity'))
+        .order_by('-total_qty')[:3]
+    )
+
+    products = products_qs[:5]
+    orders = orders_qs[:5]
+
+    # Helper for date ranges
+    def daterange(start, end):
+        for n in range((end - start).days + 1):
+            yield start + datetime.timedelta(n)
+
+    # Prepare time series for today (hourly), last 7 days (daily), last 30 days (daily), all time (daily)
+    # Orders placed
+    orders_placed_today = []
+    for hour in range(24):
+        start = datetime.datetime.combine(today, datetime.time(hour, 0, 0, tzinfo=now.tzinfo))
+        end = start + datetime.timedelta(hours=1)
+        count = orders_qs.filter(created_at__gte=start, created_at__lt=end).count()
+        orders_placed_today.append({'label': f"{hour}:00", 'value': count})
+
+    orders_placed_7 = []
+    for d in daterange(today - datetime.timedelta(days=6), today):
+        count = orders_qs.filter(created_at__date=d).count()
+        orders_placed_7.append({'label': d.strftime("%b %d"), 'value': count})
+
+    orders_placed_30 = []
+    for d in daterange(today - datetime.timedelta(days=29), today):
+        count = orders_qs.filter(created_at__date=d).count()
+        orders_placed_30.append({'label': d.strftime("%b %d"), 'value': count})
+
+    orders_placed_all = []
+    if orders_qs.exists():
+        first_date = orders_qs.order_by('created_at').first().created_at.date()
+        for d in daterange(first_date, today):
+            count = orders_qs.filter(created_at__date=d).count()
+            orders_placed_all.append({'label': d.strftime("%b %d"), 'value': count})
+
+    # Earnings (completed only)
+    def earnings_for_qs(qs, start, end, by='hour'):
+        result = []
+        if by == 'hour':
+            for hour in range(24):
+                s = datetime.datetime.combine(start, datetime.time(hour, 0, 0, tzinfo=now.tzinfo))
+                e = s + datetime.timedelta(hours=1)
+                total = qs.filter(created_at__gte=s, created_at__lt=e).aggregate(
+                    total=Sum(ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2)))
+                )['total'] or Decimal('0.00')
+                result.append({'label': f"{hour}:00", 'value': float(total)})
+        else:
+            for d in daterange(start, end):
+                total = qs.filter(created_at__date=d).aggregate(
+                    total=Sum(ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2)))
+                )['total'] or Decimal('0.00')
+                result.append({'label': d.strftime("%b %d"), 'value': float(total)})
+        return result
+
+    earnings_today_series = earnings_for_qs(completed_qs, today, today, by='hour')
+    earnings_7_series = earnings_for_qs(completed_qs, today - datetime.timedelta(days=6), today, by='day')
+    earnings_30_series = earnings_for_qs(completed_qs, today - datetime.timedelta(days=29), today, by='day')
+    earnings_all_series = []
+    if completed_qs.exists():
+        first_date = completed_qs.order_by('created_at').first().created_at.date()
+        earnings_all_series = earnings_for_qs(completed_qs, first_date, today, by='day')
+
+    # Completed and Cancelled orders per period
+    def status_series(qs_completed, qs_cancelled, start, end, by='hour'):
+        completed, cancelled = [], []
+        if by == 'hour':
+            for hour in range(24):
+                s = datetime.datetime.combine(start, datetime.time(hour, 0, 0, tzinfo=now.tzinfo))
+                e = s + datetime.timedelta(hours=1)
+                completed.append({'label': f"{hour}:00", 'value': qs_completed.filter(created_at__gte=s, created_at__lt=e).count()})
+                cancelled.append({'label': f"{hour}:00", 'value': qs_cancelled.filter(created_at__gte=s, created_at__lt=e).count()})
+        else:
+            for d in daterange(start, end):
+                completed.append({'label': d.strftime("%b %d"), 'value': qs_completed.filter(created_at__date=d).count()})
+                cancelled.append({'label': d.strftime("%b %d"), 'value': qs_cancelled.filter(created_at__date=d).count()})
+        return completed, cancelled
+
+    cancelled_qs = orders_qs.filter(cancelled=True)
+    completed_today_series, cancelled_today_series = status_series(completed_qs, cancelled_qs, today, today, by='hour')
+    completed_7_series, cancelled_7_series = status_series(completed_qs, cancelled_qs, today - datetime.timedelta(days=6), today, by='day')
+    completed_30_series, cancelled_30_series = status_series(completed_qs, cancelled_qs, today - datetime.timedelta(days=29), today, by='day')
+    completed_all_series, cancelled_all_series = [], []
+    if orders_qs.exists():
+        first_date = orders_qs.order_by('created_at').first().created_at.date()
+        completed_all_series, cancelled_all_series = status_series(completed_qs, cancelled_qs, first_date, today, by='day')
+
+    # Earnings per period
+    earnings_today = completed_qs.filter(created_at__date=today).aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    ).get('total') or Decimal('0.00')
+    earnings_last_7 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=7)).aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    ).get('total') or Decimal('0.00')
+    earnings_last_30 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=30)).aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    ).get('total') or Decimal('0.00')
+
+    # Completed and Cancelled orders per period
+    completed_today = completed_qs.filter(created_at__date=today).count()
+    completed_last_7 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=7)).count()
+    completed_last_30 = completed_qs.filter(created_at__gte=now - datetime.timedelta(days=30)).count()
+
+    cancelled_today = orders_qs.filter(cancelled=True, created_at__date=today).count()
+    cancelled_last_7 = orders_qs.filter(cancelled=True, created_at__gte=now - datetime.timedelta(days=7)).count()
+    cancelled_last_30 = orders_qs.filter(cancelled=True, created_at__gte=now - datetime.timedelta(days=30)).count()
+
     earnings_agg = completed_qs.aggregate(
         total=Sum(
             ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
@@ -244,6 +396,7 @@ def seller_dashboard(request):
     else:
         form = ProductForm()
 
+    # Add time series for graphs
     return render(request, 'shop/seller_dashboard.html', {
         'form': form,
         'products': products,
@@ -258,6 +411,23 @@ def seller_dashboard(request):
         'total_cancelled': total_cancelled,
         'avg_order_value': avg_order_value,
         'top_products': top_products,
+        # New context for analytics graphs
+        'orders_placed_today': orders_placed_today,
+        'orders_placed_7': orders_placed_7,
+        'orders_placed_30': orders_placed_30,
+        'orders_placed_all': orders_placed_all,
+        'earnings_today_series': earnings_today_series,
+        'earnings_7_series': earnings_7_series,
+        'earnings_30_series': earnings_30_series,
+        'earnings_all_series': earnings_all_series,
+        'completed_today_series': completed_today_series,
+        'completed_7_series': completed_7_series,
+        'completed_30_series': completed_30_series,
+        'completed_all_series': completed_all_series,
+        'cancelled_today_series': cancelled_today_series,
+        'cancelled_7_series': cancelled_7_series,
+        'cancelled_30_series': cancelled_30_series,
+        'cancelled_all_series': cancelled_all_series,
     })
 
 def product_order(request, product_id):

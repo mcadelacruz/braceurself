@@ -7,7 +7,39 @@
 		<div class="card">
 			<div class="card-body">
 				<h5 class="card-title">Quick Analytics</h5>
-				<canvas id="ordersChart" width="400" height="200"></canvas>
+				<!-- Orders Placed Line Graph -->
+				<div class="mb-2">
+					<label for="ordersPlacedRange" class="form-label mb-0">Orders Placed</label>
+					<select id="ordersPlacedRange" class="form-select form-select-sm w-auto d-inline-block ms-2">
+						<option value="today">Today</option>
+						<option value="7">Last 7 days</option>
+						<option value="30">Last 30 days</option>
+						<option value="all">All time</option>
+					</select>
+				</div>
+				<canvas id="ordersPlacedChart" width="400" height="120" class="mb-3"></canvas>
+				<!-- Earnings Line Graph -->
+				<div class="mb-2">
+					<label for="earningsRange" class="form-label mb-0">Earnings</label>
+					<select id="earningsRange" class="form-select form-select-sm w-auto d-inline-block ms-2">
+						<option value="today">Today</option>
+						<option value="7">Last 7 days</option>
+						<option value="30">Last 30 days</option>
+						<option value="all">All time</option>
+					</select>
+				</div>
+				<canvas id="earningsChart" width="400" height="120" class="mb-3"></canvas>
+				<!-- Completed vs Cancelled Orders Line Graph -->
+				<div class="mb-2">
+					<label for="completedCancelledRange" class="form-label mb-0">Completed vs Cancelled Orders</label>
+					<select id="completedCancelledRange" class="form-select form-select-sm w-auto d-inline-block ms-2">
+						<option value="today">Today</option>
+						<option value="7">Last 7 days</option>
+						<option value="30">Last 30 days</option>
+						<option value="all">All time</option>
+					</select>
+				</div>
+				<canvas id="completedCancelledChart" width="400" height="120"></canvas>
 
 				<ul class="list-group list-group-flush mt-3">
 					<li class="list-group-item">Orders Today: <strong>{{ orders_today }}</strong></li>
@@ -29,8 +61,6 @@
 					</ul>
 				</div>
 				{% endif %}
-
-				<!-- Manage All Orders removed (redundant with View All Orders) -->
 			</div>
 		</div>
 	</div>
@@ -104,21 +134,148 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-	const ctx = document.getElementById('ordersChart').getContext('2d');
-	const chart = new Chart(ctx, {
-		type: 'bar',
+	// Prepare all datasets from Django context
+	const ordersPlacedSeries = {
+		today: {{ orders_placed_today|safe }},
+		'7': {{ orders_placed_7|safe }},
+		'30': {{ orders_placed_30|safe }},
+		all: {{ orders_placed_all|safe }},
+	};
+	const earningsSeries = {
+		today: {{ earnings_today_series|safe }},
+		'7': {{ earnings_7_series|safe }},
+		'30': {{ earnings_30_series|safe }},
+		all: {{ earnings_all_series|safe }},
+	};
+	const completedSeries = {
+		today: {{ completed_today_series|safe }},
+		'7': {{ completed_7_series|safe }},
+		'30': {{ completed_30_series|safe }},
+		all: {{ completed_all_series|safe }},
+	};
+	const cancelledSeries = {
+		today: {{ cancelled_today_series|safe }},
+		'7': {{ cancelled_7_series|safe }},
+		'30': {{ cancelled_30_series|safe }},
+		all: {{ cancelled_all_series|safe }},
+	};
+
+	function extractLabelsAndValues(series) {
+		return {
+			labels: series.map(x => x.label),
+			values: series.map(x => x.value)
+		};
+	}
+
+	// Orders Placed Chart
+	const ordersPlacedCtx = document.getElementById('ordersPlacedChart').getContext('2d');
+	let ordersPlacedData = extractLabelsAndValues(ordersPlacedSeries.today);
+	const ordersPlacedChart = new Chart(ordersPlacedCtx, {
+		type: 'line',
 		data: {
-			labels: ['Today','Last 7 days','Last 30 days'],
+			labels: ordersPlacedData.labels,
 			datasets: [{
-				label: 'Orders',
-				backgroundColor: ['#0d6efd','#6c757d','#198754'],
-				data: [{{ orders_today }}, {{ orders_last_7 }}, {{ orders_last_30 }}]
+				label: 'Orders Placed',
+				data: ordersPlacedData.values,
+				fill: false,
+				borderColor: '#0d6efd',
+				backgroundColor: '#0d6efd',
+				tension: 0.3,
+				pointRadius: 4,
+				pointHoverRadius: 6
 			}]
 		},
 		options: {
 			scales: { y: { beginAtZero: true, precision:0 } },
-			plugins: { legend: { display: false } }
+			plugins: { legend: { display: true } }
 		}
+	});
+
+	document.getElementById('ordersPlacedRange').addEventListener('change', function() {
+		const val = this.value;
+		const data = extractLabelsAndValues(ordersPlacedSeries[val]);
+		ordersPlacedChart.data.labels = data.labels;
+		ordersPlacedChart.data.datasets[0].data = data.values;
+		ordersPlacedChart.update();
+	});
+
+	// Earnings Chart
+	const earningsCtx = document.getElementById('earningsChart').getContext('2d');
+	let earningsData = extractLabelsAndValues(earningsSeries.today);
+	const earningsChart = new Chart(earningsCtx, {
+		type: 'line',
+		data: {
+			labels: earningsData.labels,
+			datasets: [{
+				label: 'Earnings ($)',
+				data: earningsData.values,
+				fill: false,
+				borderColor: '#198754',
+				backgroundColor: '#198754',
+				tension: 0.3,
+				pointRadius: 4,
+				pointHoverRadius: 6
+			}]
+		},
+		options: {
+			scales: { y: { beginAtZero: true } },
+			plugins: { legend: { display: true } }
+		}
+	});
+
+	document.getElementById('earningsRange').addEventListener('change', function() {
+		const val = this.value;
+		const data = extractLabelsAndValues(earningsSeries[val]);
+		earningsChart.data.labels = data.labels;
+		earningsChart.data.datasets[0].data = data.values;
+		earningsChart.update();
+	});
+
+	// Completed vs Cancelled Orders Chart
+	const completedCancelledCtx = document.getElementById('completedCancelledChart').getContext('2d');
+	let completedData = extractLabelsAndValues(completedSeries.today);
+	let cancelledData = extractLabelsAndValues(cancelledSeries.today);
+	const completedCancelledChart = new Chart(completedCancelledCtx, {
+		type: 'line',
+		data: {
+			labels: completedData.labels,
+			datasets: [
+				{
+					label: 'Completed Orders',
+					data: completedData.values,
+					fill: false,
+					borderColor: '#0d6efd',
+					backgroundColor: '#0d6efd',
+					tension: 0.3,
+					pointRadius: 4,
+					pointHoverRadius: 6
+				},
+				{
+					label: 'Cancelled Orders',
+					data: cancelledData.values,
+					fill: false,
+					borderColor: '#dc3545',
+					backgroundColor: '#dc3545',
+					tension: 0.3,
+					pointRadius: 4,
+					pointHoverRadius: 6
+				}
+			]
+		},
+		options: {
+			scales: { y: { beginAtZero: true, precision:0 } },
+			plugins: { legend: { display: true } }
+		}
+	});
+
+	document.getElementById('completedCancelledRange').addEventListener('change', function() {
+		const val = this.value;
+		const completed = extractLabelsAndValues(completedSeries[val]);
+		const cancelled = extractLabelsAndValues(cancelledSeries[val]);
+		completedCancelledChart.data.labels = completed.labels;
+		completedCancelledChart.data.datasets[0].data = completed.values;
+		completedCancelledChart.data.datasets[1].data = cancelled.values;
+		completedCancelledChart.update();
 	});
 </script>
 {% endblock %}
