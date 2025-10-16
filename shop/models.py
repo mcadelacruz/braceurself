@@ -68,6 +68,10 @@ class CustomBraceletDesign(models.Model):
             'circle': 'Circle',
             'square': 'Square',
             'triangle': 'Triangle',
+            'star': 'Star',
+            'heart': 'Heart',
+            'hexagon': 'Hexagon',
+            'diamond': 'Diamond',
         }
         color_names = {
             '#ff0000': 'Red',
@@ -78,6 +82,14 @@ class CustomBraceletDesign(models.Model):
             '#00ffff': 'Cyan',
             '#ffffff': 'White',
             '#000000': 'Black',
+            '#ffa500': 'Orange',
+            '#964b00': 'Brown',
+            '#808080': 'Gray',
+            '#ffc0cb': 'Pink',
+            '#8b00ff': 'Violet',
+            '#ffd700': 'Gold',
+            '#228b22': 'Forest Green',
+            '#b22222': 'Firebrick',
         }
         size_names = {
             'small': 'Small',
@@ -86,8 +98,12 @@ class CustomBraceletDesign(models.Model):
         }
         parts = []
         for idx, b in enumerate(self.beads, 1):
-            color = color_names.get(b.get('color'), b.get('color', 'Unknown'))
+            color = color_names.get(b.get('color', '').lower(), b.get('color', 'Unknown'))
             size = size_names.get(b.get('size'), b.get('size', 'Unknown'))
             shape = bead_names.get(b.get('shape'), b.get('shape', 'Unknown'))
-            parts.append(f"{idx}. {color} {size} {shape}")
+            letter = b.get('letter', '')
+            if letter:
+                parts.append(f"{idx}. {color} {size} {shape} '{letter}'")
+            else:
+                parts.append(f"{idx}. {color} {size} {shape}")
         return parts

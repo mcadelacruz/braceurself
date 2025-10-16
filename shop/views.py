@@ -752,7 +752,8 @@ def bracelet_design_detail(request, design_id):
 def order_custom_bracelet(request, design_id):
     if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
         return redirect('login')
-    design = get_object_or_404(CustomBraceletDesign, id=design_id, customer=request.user)
+    # Allow ordering any design, not just own
+    design = get_object_or_404(CustomBraceletDesign, id=design_id)
     if request.method == 'POST':
         # Find seller (assume only one seller profile)
         seller_profile = SellerProfile.objects.first()

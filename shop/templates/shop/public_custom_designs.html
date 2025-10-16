@@ -1,6 +1,7 @@
 {% extends 'shop/base.html' %}
 {% block content %}
 <h2 class="mb-4">Custom Designs by Other Customers</h2>
+<button type="button" class="btn btn-outline-secondary mb-3" onclick="window.history.back();">Back</button>
 {% if designs %}
     <div class="row">
         {% for design in designs %}
@@ -20,6 +21,17 @@
                 </div>
                 <script>
                 (function() {
+                    function isLightColor(hex) {
+                        if (!hex) return false;
+                        hex = hex.replace('#', '');
+                        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+                        if (hex.length !== 6) return false;
+                        const r = parseInt(hex.substr(0,2),16);
+                        const g = parseInt(hex.substr(2,2),16);
+                        const b = parseInt(hex.substr(4,2),16);
+                        const luminance = 0.299*r + 0.587*g + 0.114*b;
+                        return luminance > 180;
+                    }
                     const beads = {{ design.beads|safe }};
                     const canvas = document.getElementById('bracelet-preview-{{ design.id }}');
                     if (!canvas) return;
@@ -35,21 +47,80 @@
                         ctx.save();
                         ctx.translate(bx, by);
                         ctx.rotate(angle + Math.PI/2);
+                        ctx.strokeStyle = "#888";
+                        ctx.lineWidth = 2;
                         ctx.beginPath();
                         ctx.fillStyle = bead.color || "#888";
                         let size = bead.size === "large" ? 12 : bead.size === "medium" ? 9 : 6;
                         if (bead.shape === "circle") {
                             ctx.arc(0, 0, size, 0, 2*Math.PI);
                             ctx.fill();
+                            ctx.stroke();
                         } else if (bead.shape === "square") {
                             ctx.rect(-size, -size, size*2, size*2);
                             ctx.fill();
+                            ctx.stroke();
                         } else if (bead.shape === "triangle") {
                             ctx.moveTo(0, -size);
                             ctx.lineTo(size, size);
                             ctx.lineTo(-size, size);
                             ctx.closePath();
                             ctx.fill();
+                            ctx.stroke();
+                        } else if (bead.shape === "star") {
+                            ctx.beginPath();
+                            for (let j = 0; j < 5; j++) {
+                                ctx.lineTo(
+                                    Math.cos((18 + j * 72) / 180 * Math.PI) * size,
+                                    -Math.sin((18 + j * 72) / 180 * Math.PI) * size
+                                );
+                                ctx.lineTo(
+                                    Math.cos((54 + j * 72) / 180 * Math.PI) * size * 0.5,
+                                    -Math.sin((54 + j * 72) / 180 * Math.PI) * size * 0.5
+                                );
+                            }
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        } else if (bead.shape === "heart") {
+                            ctx.beginPath();
+                            ctx.moveTo(0, size/2);
+                            ctx.bezierCurveTo(size, -size/2, size/2, -size, 0, -size/3);
+                            ctx.bezierCurveTo(-size/2, -size, -size, -size/2, 0, size/2);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        } else if (bead.shape === "hexagon") {
+                            ctx.beginPath();
+                            for (let j = 0; j < 6; j++) {
+                                let a = Math.PI/3 * j;
+                                let x = Math.cos(a) * size;
+                                let y = Math.sin(a) * size;
+                                if (j === 0) ctx.moveTo(x, y);
+                                else ctx.lineTo(x, y);
+                            }
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        } else if (bead.shape === "diamond") {
+                            ctx.beginPath();
+                            ctx.moveTo(0, -size);
+                            ctx.lineTo(size, 0);
+                            ctx.lineTo(0, size);
+                            ctx.lineTo(-size, 0);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        }
+                        // Draw letter if present
+                        if (bead.letter) {
+                            ctx.save();
+                            ctx.font = `${size*1.2}px Arial Black,Arial,sans-serif`;
+                            ctx.fillStyle = isLightColor(bead.color) ? "#000" : "#fff";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(bead.letter, 0, 0);
+                            ctx.restore();
                         }
                         ctx.restore();
                     }
