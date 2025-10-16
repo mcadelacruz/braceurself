@@ -1,0 +1,85 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<h1 class="mb-3">Manage Products</h1>
+
+<form method="get" class="row g-2 mb-3">
+	<!-- search -->
+	<div class="col-auto">
+		<input type="search" name="search" class="form-control" placeholder="Search products..." value="{{ filters.search }}">
+	</div>
+
+	<!-- primary/simple filter controls -->
+	<div class="col-auto">
+		<select name="sort_by" class="form-select">
+			<option value="created_at" {% if filters.sort_by == 'created_at' %}selected{% endif %}>Date Added</option>
+			<option value="price" {% if filters.sort_by == 'price' %}selected{% endif %}>Price</option>
+			<option value="stock" {% if filters.sort_by == 'stock' %}selected{% endif %}>Stock</option>
+		</select>
+	</div>
+	<div class="col-auto">
+		<select name="sort_dir" class="form-select">
+			<option value="desc" {% if filters.sort_dir == 'desc' %}selected{% endif %}>Descending</option>
+			<option value="asc" {% if filters.sort_dir == 'asc' %}selected{% endif %}>Ascending</option>
+		</select>
+	</div>
+
+	<div class="col-auto">
+		<button class="btn btn-primary">Filter</button>
+	</div>
+</form>
+
+{% if page_obj.object_list %}
+	<div class="row g-3">
+		{% for product in page_obj.object_list %}
+			<div class="col-md-6">
+				<div class="card">
+					<div class="row g-0">
+						<div class="col-4">
+							{% if product.image %}
+								<img src="{{ product.image.url }}" class="img-fluid rounded-start" style="height:120px;object-fit:cover;">
+							{% else %}
+								<div class="bg-light d-flex align-items-center justify-content-center" style="height:120px;">No image</div>
+							{% endif %}
+						</div>
+						<div class="col-8">
+							<div class="card-body">
+								<h5 class="card-title">{{ product.name }}</h5>
+								<p class="card-text mb-1">Price: ${{ product.price }}</p>
+								<p class="card-text mb-1">Stock: <strong id="stock-{{ product.id }}">{{ product.stock }}</strong></p>
+								<small class="text-muted">Added: {{ product.created_at|date:"Y-m-d" }}</small>
+
+								<!-- inline stock update form -->
+								<form method="post" class="mt-2 d-flex align-items-center gap-2">
+									{% csrf_token %}
+									<input type="hidden" name="product_id" value="{{ product.id }}">
+									<input type="number" name="new_stock" min="0" value="{{ product.stock }}" class="form-control form-control-sm" style="width:100px;">
+									<button type="submit" name="update_stock" class="btn btn-sm btn-outline-primary">Update Stock</button>
+								</form>
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+
+	<nav class="mt-3">
+		<ul class="pagination">
+			{% if page_obj.has_previous %}
+			<li class="page-item"><a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a></li>
+			{% else %}
+			<li class="page-item disabled"><span class="page-link">Previous</span></li>
+			{% endif %}
+			<li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+			{% if page_obj.has_next %}
+			<li class="page-item"><a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a></li>
+			{% else %}
+			<li class="page-item disabled"><span class="page-link">Next</span></li>
+			{% endif %}
+		</ul>
+	</nav>
+{% else %}
+	<p>No products found.</p>
+{% endif %}
+{% endblock %}

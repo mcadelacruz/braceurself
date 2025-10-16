@@ -1,0 +1,80 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<h1 class="mb-3">Manage Orders</h1>
+
+<form method="get" class="row g-2 mb-3">
+	<!-- primary/simple filter controls -->
+	<div class="col-auto">
+		<select name="sort_by" class="form-select">
+			<option value="created_at" {% if filters.sort_by == 'created_at' %}selected{% endif %}>Order Date</option>
+			<option value="delivered_at" {% if filters.sort_by == 'delivered_at' %}selected{% endif %}>Delivered Date</option>
+		</select>
+	</div>
+	<div class="col-auto">
+		<select name="sort_dir" class="form-select">
+			<option value="desc" {% if filters.sort_dir == 'desc' %}selected{% endif %}>Descending</option>
+			<option value="asc" {% if filters.sort_dir == 'asc' %}selected{% endif %}>Ascending</option>
+		</select>
+	</div>
+	<div class="col-auto">
+		<select name="status" class="form-select">
+			<option value="">All status</option>
+			{% for v,l in status_choices %}
+				<option value="{{ v }}" {% if filters.status == v %}selected{% endif %}>{{ l }}</option>
+			{% endfor %}
+		</select>
+	</div>
+	<div class="col-auto">
+		<select name="cancelled" class="form-select">
+			<option value="">All</option>
+			<option value="no" {% if filters.cancelled == 'no' %}selected{% endif %}>Active</option>
+			<option value="yes" {% if filters.cancelled == 'yes' %}selected{% endif %}>Cancelled</option>
+		</select>
+	</div>
+	<div class="col-auto">
+		<button class="btn btn-primary">Filter</button>
+	</div>
+</form>
+
+{% if page_obj.object_list %}
+	<div class="list-group">
+		{% for order in page_obj.object_list %}
+			<div class="list-group-item">
+				<div class="d-flex align-items-start">
+					<div class="me-3">
+						{% if order.product.image %}
+							<img src="{{ order.product.image.url }}" style="width:80px;height:80px;object-fit:cover;" class="rounded">
+						{% endif %}
+					</div>
+					<div class="flex-grow-1">
+						<h5>{{ order.product.name }} (x{{ order.quantity }})</h5>
+						<p class="mb-1">Customer: {{ order.customer.username }} • Status: {{ order.get_status_display }}</p>
+						<small>Ordered: {{ order.created_at|date:"Y-m-d H:i" }} {% if order.delivered_at %} • Delivered: {{ order.delivered_at|date:"Y-m-d H:i" }}{% endif %}</small>
+					</div>
+					<div>
+						<a href="{% url 'manage_order' order.id %}" class="btn btn-sm btn-outline-primary">Manage</a>
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+
+	<nav class="mt-3">
+		<ul class="pagination">
+			{% if page_obj.has_previous %}
+			<li class="page-item"><a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a></li>
+			{% else %}
+			<li class="page-item disabled"><span class="page-link">Previous</span></li>
+			{% endif %}
+			<li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+			{% if page_obj.has_next %}
+			<li class="page-item"><a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a></li>
+			{% else %}
+			<li class="page-item disabled"><span class="page-link">Next</span></li>
+			{% endif %}
+		</ul>
+	</nav>
+{% else %}
+	<p>No orders found.</p>
+{% endif %}
+{% endblock %}

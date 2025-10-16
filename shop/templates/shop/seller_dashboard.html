@@ -2,68 +2,123 @@
 {% block content %}
 <h1 class="mb-4">Seller Dashboard</h1>
 <div class="row">
-    <div class="col-md-6">
-        <h2>Add Product</h2>
-        <form method="post" enctype="multipart/form-data" class="mb-4">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Add Product</button>
-        </form>
-        <h2>Your Products</h2>
-        <ul class="list-group">
-            {% for product in products %}
-                <li class="list-group-item d-flex align-items-center">
-                    {% if product.image %}
-                        <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:40px;height:40px;object-fit:cover;" class="me-2 rounded">
-                    {% else %}
-                        <div class="me-2 rounded bg-light d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                            <span class="text-muted">No image</span>
-                        </div>
-                    {% endif %}
-                    <div>
-                        <strong>{{ product.name }}</strong> - ${{ product.price }}<br>
-                        Stock: {{ product.stock }}
-                    </div>
-                    <form method="post" class="ms-auto d-flex align-items-center">
-                        {% csrf_token %}
-                        <input type="hidden" name="product_id" value="{{ product.id }}">
-                        <input type="number" name="new_stock" min="0" value="{{ product.stock }}" class="form-control form-control-sm me-2" style="width:80px;">
-                        <button type="submit" name="update_stock" class="btn btn-outline-secondary btn-sm">Update Stock</button>
-                    </form>
-                </li>
-            {% empty %}
-                <li class="list-group-item">No products yet.</li>
-            {% endfor %}
-        </ul>
-    </div>
-    <div class="col-md-6">
-        <h2>Orders</h2>
-        <ul class="list-group">
-            {% for order in orders %}
-                <li class="list-group-item">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            {% if order.product.image %}
-                                <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" style="width:40px;height:40px;object-fit:cover;" class="rounded">
-                            {% else %}
-                                <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                                    <span class="text-muted">No image</span>
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="col">
-                            <strong>{{ order.product.name }}</strong> (x{{ order.quantity }})<br>
-                            Customer: {{ order.customer.username }}<br>
-                            Payment: {{ order.get_payment_type_display }}<br>
-                            Status: {{ order.get_status_display }}<br>
-                            <a href="{% url 'manage_order' order.id %}" class="btn btn-sm btn-outline-primary mt-2">Manage</a>
-                        </div>
-                    </div>
-                </li>
-            {% empty %}
-                <li class="list-group-item">No orders yet.</li>
-            {% endfor %}
-        </ul>
-    </div>
+	<!-- Left: Analytics -->
+	<div class="col-md-4 mb-4">
+		<div class="card">
+			<div class="card-body">
+				<h5 class="card-title">Quick Analytics</h5>
+				<canvas id="ordersChart" width="400" height="200"></canvas>
+
+				<ul class="list-group list-group-flush mt-3">
+					<li class="list-group-item">Orders Today: <strong>{{ orders_today }}</strong></li>
+					<li class="list-group-item">Last 7 days: <strong>{{ orders_last_7 }}</strong></li>
+					<li class="list-group-item">Last 30 days: <strong>{{ orders_last_30 }}</strong></li>
+					<li class="list-group-item">Total Completed: <strong>{{ total_completed }}</strong></li>
+					<li class="list-group-item">Total Cancelled: <strong>{{ total_cancelled }}</strong></li>
+					<li class="list-group-item">Total Earnings: <strong>${{ total_earnings }}</strong></li>
+					<li class="list-group-item">Avg Completed Order Value: <strong>${{ avg_order_value }}</strong></li>
+				</ul>
+
+				{% if top_products %}
+				<div class="mt-3">
+					<h6>Top Products</h6>
+					<ul class="list-unstyled mb-0">
+						{% for p in top_products %}
+							<li>{{ forloop.counter }}. {{ p.product__name }} — {{ p.total_qty }} sold</li>
+						{% endfor %}
+					</ul>
+				</div>
+				{% endif %}
+
+				<!-- Manage All Orders removed (redundant with View All Orders) -->
+			</div>
+		</div>
+	</div>
+
+	<!-- Middle: Products: Add & show 5 recent with link -->
+	<div class="col-md-4 mb-4">
+		<div class="card mb-3">
+			<div class="card-body">
+				<h5>Add Product</h5>
+				<form method="post" enctype="multipart/form-data" class="mb-2">
+					{% csrf_token %}
+					{{ form.as_p }}
+					<button type="submit" class="btn btn-success">Add Product</button>
+				</form>
+				<a href="{% url 'manage_products_list' %}" class="btn btn-outline-secondary w-100">Manage All Products</a>
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="card-header">Recent Products ({{ total_products }})</div>
+			<ul class="list-group list-group-flush">
+				{% for product in products %}
+					<li class="list-group-item d-flex align-items-center">
+						{% if product.image %}
+							<img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:40px;height:40px;object-fit:cover;" class="me-2 rounded">
+						{% else %}
+							<div class="me-2 rounded bg-light d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+								<span class="text-muted">No image</span>
+							</div>
+						{% endif %}
+						<div>
+							<strong>{{ product.name }}</strong><br>
+							<small>Price: ${{ product.price }} • Stock: {{ product.stock }}</small>
+						</div>
+					</li>
+				{% empty %}
+					<li class="list-group-item">No products yet.</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+
+	<!-- Right: Recent Orders -->
+	<div class="col-md-4 mb-4">
+		<div class="card">
+			<div class="card-header">Recent Orders ({{ total_orders }})</div>
+			<ul class="list-group list-group-flush">
+				{% for order in orders %}
+					<li class="list-group-item">
+						<div class="d-flex align-items-center">
+							{% if order.product.image %}
+								<img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" style="width:40px;height:40px;object-fit:cover;" class="me-2 rounded">
+							{% endif %}
+							<div>
+								<strong>{{ order.product.name }}</strong> (x{{ order.quantity }})<br>
+								<small>Customer: {{ order.customer.username }} • {{ order.get_status_display }}</small>
+							</div>
+						</div>
+					</li>
+				{% empty %}
+					<li class="list-group-item">No orders yet.</li>
+				{% endfor %}
+			</ul>
+			<div class="card-body">
+				<a href="{% url 'manage_orders_list' %}" class="btn btn-outline-secondary w-100">View All Orders</a>
+			</div>
+		</div>
+	</div>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+	const ctx = document.getElementById('ordersChart').getContext('2d');
+	const chart = new Chart(ctx, {
+		type: 'bar',
+		data: {
+			labels: ['Today','Last 7 days','Last 30 days'],
+			datasets: [{
+				label: 'Orders',
+				backgroundColor: ['#0d6efd','#6c757d','#198754'],
+				data: [{{ orders_today }}, {{ orders_last_7 }}, {{ orders_last_30 }}]
+			}]
+		},
+		options: {
+			scales: { y: { beginAtZero: true, precision:0 } },
+			plugins: { legend: { display: false } }
+		}
+	});
+</script>
 {% endblock %}

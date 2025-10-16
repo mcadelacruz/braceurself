@@ -7,6 +7,11 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+from decimal import Decimal
+import datetime
 
 def home(request):
     return render(request, 'shop/home.html')
@@ -33,9 +38,16 @@ def catalog(request):
 def order_list(request):
     if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
         return redirect('login')
+
+    # handle message POST (keep same behavior, preserve querystring on redirect)
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
-        order = Order.objects.get(id=order_id, customer=request.user)
+        try:
+            order = Order.objects.get(id=order_id, customer=request.user)
+        except Order.DoesNotExist:
+            messages.error(request, "Order not found.")
+            qs = request.META.get('QUERY_STRING', '')
+            return redirect(request.path + (f"?{qs}" if qs else ""))
         msg_form = OrderMessageForm(request.POST, request.FILES)
         if msg_form.is_valid():
             msg = msg_form.save(commit=False)
@@ -43,10 +55,55 @@ def order_list(request):
             msg.sender = request.user
             msg.save()
             messages.success(request, "Message sent.")
-            return redirect('order_list')
-    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
-    msg_forms = {order.id: OrderMessageForm() for order in orders}
-    return render(request, 'shop/order_list.html', {'orders': orders, 'msg_forms': msg_forms})
+        else:
+            messages.error(request, "Failed to send message.")
+        qs = request.META.get('QUERY_STRING', '')
+        return redirect(request.path + (f"?{qs}" if qs else ""))
+
+    # GET: filters / search / sort / paginate
+    qs = Order.objects.filter(customer=request.user)
+
+    status = request.GET.get('status', '')
+    cancelled = request.GET.get('cancelled', '')  # 'yes' / 'no' / ''
+    sort_by = request.GET.get('sort_by', 'created_at')
+    sort_dir = request.GET.get('sort_dir', 'desc')
+    search = request.GET.get('search', '').strip()
+
+    if status:
+        qs = qs.filter(status=status)
+    if cancelled == 'yes':
+        qs = qs.filter(cancelled=True)
+    elif cancelled == 'no':
+        qs = qs.filter(cancelled=False)
+
+    if search:
+        qs = qs.filter(product__name__icontains=search)
+
+    allowed_order_fields = {'created_at', 'delivered_at'}
+    if sort_by not in allowed_order_fields:
+        sort_by = 'created_at'
+    order_field = sort_by if sort_dir == 'asc' else f"-{sort_by}"
+    qs = qs.order_by(order_field)
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # prepare empty message forms for visible orders
+    msg_forms = {order.id: OrderMessageForm() for order in page_obj.object_list}
+
+    return render(request, 'shop/order_list.html', {
+        'page_obj': page_obj,
+        'msg_forms': msg_forms,
+        'filters': {
+            'status': status,
+            'cancelled': cancelled,
+            'sort_by': sort_by,
+            'sort_dir': sort_dir,
+            'search': search,
+        },
+        'status_choices': Order.STATUS_CHOICES,
+    })
 
 def login_register(request):
     return render(request, 'shop/login_register.html')
@@ -132,8 +189,43 @@ def seller_dashboard(request):
     if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
         return redirect('login')
     seller_profile = request.user.sellerprofile
-    products = Product.objects.filter(created_by=seller_profile)
-    orders = Order.objects.filter(product__created_by=seller_profile).order_by('-created_at')
+    products_qs = Product.objects.filter(created_by=seller_profile).order_by('-created_at')
+    orders_qs = Order.objects.filter(product__created_by=seller_profile).order_by('-created_at')
+
+    # analytics counts
+    now = timezone.now()
+    today = now.date()
+    orders_today = orders_qs.filter(created_at__date=today).count()
+    orders_last_7 = orders_qs.filter(created_at__gte=now - datetime.timedelta(days=7)).count()
+    orders_last_30 = orders_qs.filter(created_at__gte=now - datetime.timedelta(days=30)).count()
+
+    # totals
+    total_products = products_qs.count()
+    total_orders = orders_qs.count()
+
+    # new analytics
+    completed_qs = orders_qs.filter(done=True, cancelled=False)
+    total_completed = completed_qs.count()
+    total_cancelled = orders_qs.filter(cancelled=True).count()
+
+    earnings_agg = completed_qs.aggregate(
+        total=Sum(
+            ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField(max_digits=12, decimal_places=2))
+        )
+    )
+    total_earnings = earnings_agg.get('total') or Decimal('0.00')
+
+    avg_order_value = (total_earnings / total_completed) if total_completed else Decimal('0.00')
+
+    top_products = list(
+        orders_qs.values('product__id', 'product__name')
+        .annotate(total_qty=Sum('quantity'))
+        .order_by('-total_qty')[:3]
+    )
+
+    products = products_qs[:5]
+    orders = orders_qs[:5]
+
     if request.method == 'POST':
         if 'update_stock' in request.POST:
             product_id = request.POST.get('product_id')
@@ -156,10 +248,21 @@ def seller_dashboard(request):
                 return redirect('seller_dashboard')
     else:
         form = ProductForm()
+
     return render(request, 'shop/seller_dashboard.html', {
         'form': form,
         'products': products,
         'orders': orders,
+        'orders_today': orders_today,
+        'orders_last_7': orders_last_7,
+        'orders_last_30': orders_last_30,
+        'total_products': total_products,
+        'total_orders': total_orders,
+        'total_earnings': total_earnings,
+        'total_completed': total_completed,
+        'total_cancelled': total_cancelled,
+        'avg_order_value': avg_order_value,
+        'top_products': top_products,
     })
 
 def product_order(request, product_id):
@@ -205,6 +308,7 @@ def manage_order(request, order_id):
             updated = True
         if mark_done == 'on' and order.status == 'delivered' and not order.cancelled:
             order.done = True
+            order.delivered_at = timezone.now()  # set delivered timestamp
             updated = True
         if cancel_order == 'on' and not order.cancelled:
             if cancel_reason and cancel_reason.strip():
@@ -228,7 +332,8 @@ def manage_order(request, order_id):
         if updated and not error:
             order.save()
             messages.success(request, "Order updated.")
-            return redirect('seller_dashboard')
+            # stay on the same manage_order page to show updated state
+            return redirect('manage_order', order_id=order.id)
     else:
         msg_form = OrderMessageForm()
     return render(request, 'shop/manage_order.html', {
@@ -236,6 +341,107 @@ def manage_order(request, order_id):
         'status_choices': Order.STATUS_CHOICES,
         'error': error,
         'msg_form': msg_form,
+    })
+
+def manage_orders_list(request):
+    """Seller: list orders (10/page) with simple filters: status, cancelled, sort_by, sort_dir."""
+    if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    seller_profile = request.user.sellerprofile
+    qs = Order.objects.filter(product__created_by=seller_profile)
+
+    # filters from GET
+    status = request.GET.get('status')
+    cancelled = request.GET.get('cancelled')  # 'yes' or 'no' or ''
+
+    # Sorting controls
+    sort_by = request.GET.get('sort_by', 'created_at')
+    sort_dir = request.GET.get('sort_dir', 'desc')  # 'asc' or 'desc'
+
+    # apply simple filters
+    if status:
+        qs = qs.filter(status=status)
+    if cancelled == 'yes':
+        qs = qs.filter(cancelled=True)
+    elif cancelled == 'no':
+        qs = qs.filter(cancelled=False)
+
+    # NOTE: advanced date filters removed
+
+    # safe ordering: only allow specific fields (simplified)
+    allowed_order_fields = {'created_at', 'delivered_at'}
+    if sort_by not in allowed_order_fields:
+        sort_by = 'created_at'
+    order_field = sort_by if sort_dir == 'asc' else f"-{sort_by}"
+    qs = qs.order_by(order_field)
+
+    # paginate
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'shop/manage_orders.html', {
+        'page_obj': page_obj,
+        'filters': {
+            'status': status or '',
+            'cancelled': cancelled or '',
+            'sort_by': sort_by,
+            'sort_dir': sort_dir,
+        },
+        'status_choices': Order.STATUS_CHOICES,
+    })
+
+def manage_products_list(request):
+    """Seller: list products (10/page) with search and simple sorting."""
+    if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    seller_profile = request.user.sellerprofile
+
+    # handle stock update POST
+    if request.method == 'POST' and 'update_stock' in request.POST:
+        product_id = request.POST.get('product_id')
+        new_stock = request.POST.get('new_stock')
+        try:
+            product = Product.objects.get(id=product_id, created_by=seller_profile)
+            product.stock = max(0, int(new_stock))
+            product.save()
+            messages.success(request, f"Stock updated for {product.name}!")
+        except Exception:
+            messages.error(request, "Failed to update stock.")
+        qs = request.META.get('QUERY_STRING', '')
+        return redirect(request.path + (f"?{qs}" if qs else ""))
+
+    qs = Product.objects.filter(created_by=seller_profile)
+
+    # simple sorting controls
+    sort_by = request.GET.get('sort_by', 'created_at')  # price, stock, created_at
+    sort_dir = request.GET.get('sort_dir', 'desc')  # asc or desc
+
+    # search for specific products
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+
+    # NOTE: advanced min/max/date filters removed
+
+    # safe ordering for products
+    allowed_order_fields = {'price', 'stock', 'created_at'}
+    if sort_by not in allowed_order_fields:
+        sort_by = 'created_at'
+    order_field = sort_by if sort_dir == 'asc' else f"-{sort_by}"
+    qs = qs.order_by(order_field)
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'shop/manage_products.html', {
+        'page_obj': page_obj,
+        'filters': {
+            'search': search or '',
+            'sort_by': sort_by,
+            'sort_dir': sort_dir,
+        },
     })
 
 def update_seller_view(request):

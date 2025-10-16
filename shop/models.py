@@ -12,6 +12,7 @@ class Product(models.Model):
     image = models.ImageField(upload_to='product_images/')
     created_by = models.ForeignKey(SellerProfile, on_delete=models.CASCADE)
     stock = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -34,6 +35,7 @@ class Order(models.Model):
     payment_type = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='waiting')
     created_at = models.DateTimeField(auto_now_add=True)
+    delivered_at = models.DateTimeField(blank=True, null=True)
     done = models.BooleanField(default=False)
     cancelled = models.BooleanField(default=False)
     cancel_reason = models.TextField(blank=True, null=True)
