@@ -463,6 +463,13 @@ def customer_manage_order(request, order_id):
     if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
         return redirect('login')
     order = get_object_or_404(Order, id=order_id, customer=request.user)
+    # Try to get custom design if this is a custom bracelet order
+    custom_design = None
+    if order.product and order.product.name.startswith("Custom:"):
+        custom_design = CustomBraceletDesign.objects.filter(
+            name=order.product.name.replace("Custom: ", ""),
+            customer=request.user
+        ).first()
     error = None
     if request.method == 'POST':
         # Cancellation takes precedence when cancel_order button is present
@@ -507,12 +514,20 @@ def customer_manage_order(request, order_id):
         'order': order,
         'msg_form': msg_form,
         'error': error,
+        'custom_design': custom_design,
     })
 
 def manage_order(request, order_id):
     if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):
         return redirect('login')
     order = Order.objects.get(id=order_id)
+    # Try to get custom design if this is a custom bracelet order
+    custom_design = None
+    if order.product and order.product.name.startswith("Custom:"):
+        custom_design = CustomBraceletDesign.objects.filter(
+            name=order.product.name.replace("Custom: ", ""),
+            customer=order.customer
+        ).first()
     error = None
     if request.method == 'POST':
         status = request.POST.get('status')
@@ -558,6 +573,7 @@ def manage_order(request, order_id):
         'status_choices': Order.STATUS_CHOICES,
         'error': error,
         'msg_form': msg_form,
+        'custom_design': custom_design,
     })
 
 def manage_orders_list(request):
@@ -685,6 +701,16 @@ def update_seller_view(request):
 def customize_bracelet(request):
     if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
         return redirect('login')
+    # Handle delete request
+    if request.method == 'POST' and 'delete_design_id' in request.POST:
+        design_id = request.POST.get('delete_design_id')
+        design = CustomBraceletDesign.objects.filter(id=design_id, customer=request.user).first()
+        if design:
+            design.delete()
+            messages.success(request, "Custom bracelet design deleted.")
+        else:
+            messages.error(request, "Design not found or not yours.")
+        return redirect('customize_bracelet')
     designs = CustomBraceletDesign.objects.filter(customer=request.user).order_by('-created_at')
     return render(request, 'shop/customize_bracelet.html', {
         'designs': designs,
@@ -727,17 +753,27 @@ def order_custom_bracelet(request, design_id):
         return redirect('login')
     design = get_object_or_404(CustomBraceletDesign, id=design_id, customer=request.user)
     if request.method == 'POST':
-        # Create an Order for this design (custom product)
+        # Find seller (assume only one seller profile)
+        seller_profile = SellerProfile.objects.first()
+        # Create a Product for this custom design if needed
+        product = Product.objects.create(
+            name=f"Custom: {design.name}",
+            price=Decimal('0.00'),
+            image=None,
+            created_by=seller_profile,
+            stock=0
+        )
+        # Create an Order for this design
         order = Order.objects.create(
             customer=request.user,
-            product=None,  # None for custom
+            product=product,
             quantity=1,
             payment_type=request.POST.get('payment_type', 'gcash'),
             status='waiting',
-            # Store design id in a custom field or in product (if you want to link)
+            # Optionally: add a field to Order to link to design (custom_design_id)
         )
-        order.custom_design_id = design.id  # You may want to add this field to Order model
-        order.save()
+        # Optionally: order.custom_design_id = design.id
+        # order.save()
         messages.success(request, "Custom bracelet order placed!")
         return redirect('order_list')
     return render(request, 'shop/order_custom_bracelet.html', {

@@ -11,16 +11,27 @@
     <button type="submit" class="btn btn-success mt-2">Save Design</button>
 </form>
 <div class="row mt-4">
-    <div class="col-md-3">
+    <div class="col-md-4">
         <h5>Bead Palette</h5>
-        <div id="bead-palette">
-            <!-- Example beads -->
-            <div class="bead-option" draggable="true" data-shape="circle" data-color="red" data-size="small">🔴 Circle</div>
-            <div class="bead-option" draggable="true" data-shape="square" data-color="blue" data-size="small">🟦 Square</div>
-            <div class="bead-option" draggable="true" data-shape="oval" data-color="green" data-size="small">🟢 Oval</div>
-            <!-- Add more shapes/colors as needed -->
+        <div id="bead-shapes" class="mb-3">
+            <button type="button" class="btn btn-outline-secondary bead-shape" data-shape="circle">● Circle</button>
+            <button type="button" class="btn btn-outline-secondary bead-shape" data-shape="square">■ Square</button>
+            <button type="button" class="btn btn-outline-secondary bead-shape" data-shape="triangle">▲ Triangle</button>
         </div>
-        <div class="mt-3">
+        <div class="mb-3">
+            <label>Color:</label>
+            <div id="bead-colors" class="d-flex flex-wrap gap-2 mt-1">
+                <button type="button" class="color-btn" data-color="#ff0000" style="background:#ff0000;"></button>
+                <button type="button" class="color-btn" data-color="#0000ff" style="background:#0000ff;"></button>
+                <button type="button" class="color-btn" data-color="#00ff00" style="background:#00ff00;"></button>
+                <button type="button" class="color-btn" data-color="#ffff00" style="background:#ffff00;"></button>
+                <button type="button" class="color-btn" data-color="#ff00ff" style="background:#ff00ff;"></button>
+                <button type="button" class="color-btn" data-color="#00ffff" style="background:#00ffff;"></button>
+                <button type="button" class="color-btn" data-color="#ffffff" style="background:#ffffff; border:1px solid #ccc;"></button>
+                <button type="button" class="color-btn" data-color="#000000" style="background:#000000;"></button>
+            </div>
+        </div>
+        <div class="mb-3">
             <label>Size:</label>
             <select id="bead-size" class="form-select form-select-sm">
                 <option value="small">Small</option>
@@ -28,75 +39,164 @@
                 <option value="large">Large</option>
             </select>
         </div>
-        <div class="mt-2">
-            <label>Color:</label>
-            <input type="color" id="bead-color" value="#ff0000" class="form-control form-control-sm" style="width:60px;">
-        </div>
+        <button type="button" id="add-bead-btn" class="btn btn-primary w-100 mb-3">Add Bead</button>
     </div>
-    <div class="col-md-9">
+    <div class="col-md-8">
         <h5>Bracelet Preview</h5>
-        <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
-        <div class="mt-2">
-            <span id="bead-count"></span>
-            <span class="text-muted ms-2">(Min: 15, Max: 25 beads)</span>
+        <div class="d-flex flex-column align-items-center">
+            <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
+            <div class="mt-4 w-100">
+                <h6>Bead Order</h6>
+                <div id="bead-order-scroll" style="overflow-x:auto; white-space:nowrap; border-bottom:1px solid #eee; padding-bottom:8px;">
+                    <!-- Beads will be rendered here horizontally -->
+                </div>
+                <span id="bead-count"></span>
+                <span class="text-muted ms-2">(Min: 15, Max: 25 beads)</span>
+            </div>
         </div>
     </div>
 </div>
 <script>
-const beadPalette = document.getElementById('bead-palette');
+const beadShapes = document.querySelectorAll('.bead-shape');
+const colorBtns = document.querySelectorAll('.color-btn');
+const beadSizeSelect = document.getElementById('bead-size');
+const addBeadBtn = document.getElementById('add-bead-btn');
+const beadCountSpan = document.getElementById('bead-count');
+const beadOrderScroll = document.getElementById('bead-order-scroll');
 const canvas = document.getElementById('bracelet-canvas');
 const ctx = canvas.getContext('2d');
 let beads = [];
 const minBeads = 15, maxBeads = 25;
 
+// Selected bead options
+let selectedShape = 'circle';
+let selectedColor = '#ff0000';
+let selectedSize = 'small';
+
+// Shape selection
+beadShapes.forEach(btn => {
+    btn.addEventListener('click', function() {
+        beadShapes.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedShape = this.dataset.shape;
+    });
+});
+beadShapes[0].classList.add('active');
+
+// Color selection
+colorBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+        colorBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedColor = this.dataset.color;
+    });
+});
+colorBtns[0].classList.add('active');
+
+// Size selection
+beadSizeSelect.addEventListener('change', function() {
+    selectedSize = this.value;
+});
+
+// Add bead
+addBeadBtn.addEventListener('click', function() {
+    if (beads.length >= maxBeads) return;
+    beads.push({shape: selectedShape, color: selectedColor, size: selectedSize});
+    updateBeadOrder();
+    drawBracelet();
+});
+
+// Update bead order UI (horizontal scroll)
+function updateBeadOrder() {
+    beadOrderScroll.innerHTML = '';
+    beads.forEach((bead, idx) => {
+        const beadDiv = document.createElement('div');
+        beadDiv.style.display = 'inline-block';
+        beadDiv.style.marginRight = '10px';
+        beadDiv.style.textAlign = 'center';
+        beadDiv.style.position = 'relative';
+        beadDiv.innerHTML = `
+            <div style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;">
+                <span style="display:inline-block;width:28px;height:28px;background:${bead.color};border-radius:50%;"></span>
+            </div>
+            <div style="font-size:0.85em;">${bead.shape.charAt(0).toUpperCase()+bead.shape.slice(1)}, ${bead.size}</div>
+            <div style="margin-top:2px;">
+                <button type="button" class="btn btn-sm btn-outline-secondary bead-left" ${idx===0?'disabled':''}>&larr;</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary bead-right" ${idx===beads.length-1?'disabled':''}>&rarr;</button>
+                <button type="button" class="btn btn-sm btn-outline-danger bead-del">&times;</button>
+            </div>
+        `;
+        beadDiv.querySelector('.bead-left').onclick = () => {
+            if (idx > 0) {
+                [beads[idx-1], beads[idx]] = [beads[idx], beads[idx-1]];
+                updateBeadOrder();
+                drawBracelet();
+            }
+        };
+        beadDiv.querySelector('.bead-right').onclick = () => {
+            if (idx < beads.length-1) {
+                [beads[idx+1], beads[idx]] = [beads[idx], beads[idx+1]];
+                updateBeadOrder();
+                drawBracelet();
+            }
+        };
+        beadDiv.querySelector('.bead-del').onclick = () => {
+            beads.splice(idx, 1);
+            updateBeadOrder();
+            drawBracelet();
+        };
+        beadOrderScroll.appendChild(beadDiv);
+    });
+    beadCountSpan.textContent = `Beads: ${beads.length}`;
+}
+
+// Draw bracelet preview with dynamic circle size
 function drawBracelet() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    const cx = canvas.width/2, cy = canvas.height/2, r = 150;
-    const n = beads.length;
+    // Find largest bead size
+    let maxBeadSize = 14;
+    beads.forEach(bead => {
+        let size = bead.size === "large" ? 28 : bead.size === "medium" ? 20 : 14;
+        if (size > maxBeadSize) maxBeadSize = size;
+    });
+    // Calculate minimum circle radius so beads don't overlap
+    let n = beads.length;
+    let beadRadius = maxBeadSize;
+    let minCircleRadius = n > 1 ? beadRadius / Math.sin(Math.PI / n) + beadRadius : 150;
+    let r = Math.max(150, minCircleRadius);
+    // Resize canvas if needed
+    let canvasSize = Math.ceil(r * 2 + beadRadius * 2 + 20);
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const cx = canvas.width/2, cy = canvas.height/2;
     for (let i=0; i<n; ++i) {
         const angle = (2*Math.PI*i)/n;
         const bx = cx + r*Math.cos(angle);
         const by = cy + r*Math.sin(angle);
         const bead = beads[i];
         ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate(angle + Math.PI/2); // Orient shape along circle
         ctx.beginPath();
         ctx.fillStyle = bead.color || "#888";
         let size = bead.size === "large" ? 28 : bead.size === "medium" ? 20 : 14;
         if (bead.shape === "circle") {
-            ctx.arc(bx, by, size, 0, 2*Math.PI);
+            ctx.arc(0, 0, size, 0, 2*Math.PI);
             ctx.fill();
         } else if (bead.shape === "square") {
-            ctx.rect(bx-size, by-size, size*2, size*2);
+            ctx.rect(-size, -size, size*2, size*2);
             ctx.fill();
-        } else if (bead.shape === "oval") {
-            ctx.ellipse(bx, by, size, size/2, 0, 0, 2*Math.PI);
+        } else if (bead.shape === "triangle") {
+            ctx.moveTo(0, -size);
+            ctx.lineTo(size, size);
+            ctx.lineTo(-size, size);
+            ctx.closePath();
             ctx.fill();
         }
-        // Add more shapes as needed
         ctx.restore();
     }
-    document.getElementById('bead-count').textContent = `Beads: ${n}`;
+    beadCountSpan.textContent = `Beads: ${n}`;
 }
-
-canvas.addEventListener('dragover', e => e.preventDefault());
-canvas.addEventListener('drop', function(e) {
-    e.preventDefault();
-    if (beads.length >= maxBeads) return;
-    const shape = e.dataTransfer.getData('shape');
-    const color = e.dataTransfer.getData('color');
-    const size = e.dataTransfer.getData('size');
-    beads.push({shape, color, size});
-    drawBracelet();
-});
-
-document.querySelectorAll('.bead-option').forEach(opt => {
-    opt.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('shape', this.dataset.shape);
-        // Use current color/size pickers
-        e.dataTransfer.setData('color', document.getElementById('bead-color').value);
-        e.dataTransfer.setData('size', document.getElementById('bead-size').value);
-    });
-});
 
 document.getElementById('bracelet-save-form').addEventListener('submit', function(e) {
     if (beads.length < minBeads || beads.length > maxBeads) {
@@ -108,5 +208,6 @@ document.getElementById('bracelet-save-form').addEventListener('submit', functio
 });
 
 drawBracelet();
+updateBeadOrder();
 </script>
 {% endblock %}

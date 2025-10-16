@@ -14,6 +14,11 @@
                                 <strong>Design:</strong> {{ design.text_form }}
                                 <a href="{% url 'bracelet_design_detail' design.id %}" class="btn btn-sm btn-outline-secondary ms-2">View</a>
                                 <a href="{% url 'order_custom_bracelet' design.id %}" class="btn btn-sm btn-success ms-2">Order</a>
+                                <form method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delete_design_id" value="{{ design.id }}">
+                                    <button type="submit" class="btn btn-sm btn-danger ms-2" onclick="return confirm('Delete this design?');">Delete</button>
+                                </form>
                             </div>
                         </div>
                     </div>

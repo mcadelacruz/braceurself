@@ -19,6 +19,76 @@
                 {% endif %}
                 <div class="w-100">
                     <p><strong>Product:</strong> {{ order.product.name }}</p>
+                    {% if custom_design %}
+                        <div class="mb-2">
+                            <strong>Custom Design:</strong>
+                            <span>{{ custom_design.text_form }}</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="showBraceletModal()">View Design</button>
+                        </div>
+                        <!-- Modal for bracelet visualization -->
+                        <div id="braceletModal" class="modal" tabindex="-1" style="display:none;">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Bracelet Design: {{ custom_design.name }}</h5>
+                                        <button type="button" class="btn-close" onclick="hideBraceletModal()" aria-label="Close" style="background:none;border:none;font-size:2rem;line-height:1;color:#333;opacity:1;position:absolute;top:12px;right:18px;z-index:2;">&times;</button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <canvas id="bracelet-canvas-modal" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                        function showBraceletModal() {
+                            document.getElementById('braceletModal').style.display = 'flex';
+                            drawBraceletModal();
+                        }
+                        function hideBraceletModal() {
+                            document.getElementById('braceletModal').style.display = 'none';
+                        }
+                        function drawBraceletModal() {
+                            const beads = {{ custom_design.beads|safe }};
+                            const canvas = document.getElementById('bracelet-canvas-modal');
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0,0,canvas.width,canvas.height);
+                            const cx = canvas.width/2, cy = canvas.height/2, r = 150;
+                            const n = beads.length;
+                            for (let i=0; i<n; ++i) {
+                                const angle = (2*Math.PI*i)/n;
+                                const bx = cx + r*Math.cos(angle);
+                                const by = cy + r*Math.sin(angle);
+                                const bead = beads[i];
+                                ctx.save();
+                                ctx.translate(bx, by);
+                                ctx.rotate(angle + Math.PI/2);
+                                ctx.beginPath();
+                                ctx.fillStyle = bead.color || "#888";
+                                let size = bead.size === "large" ? 28 : bead.size === "medium" ? 20 : 14;
+                                if (bead.shape === "circle") {
+                                    ctx.arc(0, 0, size, 0, 2*Math.PI);
+                                    ctx.fill();
+                                } else if (bead.shape === "square") {
+                                    ctx.rect(-size, -size, size*2, size*2);
+                                    ctx.fill();
+                                } else if (bead.shape === "triangle") {
+                                    ctx.moveTo(0, -size);
+                                    ctx.lineTo(size, size);
+                                    ctx.lineTo(-size, size);
+                                    ctx.closePath();
+                                    ctx.fill();
+                                }
+                                ctx.restore();
+                            }
+                        }
+                        </script>
+                        <style>
+                        .modal { position: fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:9999; display:flex; align-items:center; justify-content:center; }
+                        .modal-dialog { max-width: 440px; }
+                        .modal-content { border-radius: 10px; position: relative; }
+                        .btn-close { cursor:pointer; }
+                        </style>
+                    {% endif %}
                     <p><strong>Customer:</strong> {{ order.customer.username }}</p>
                     <p><strong>Quantity:</strong> {{ order.quantity }}</p>
                     <p><strong>Payment Type:</strong> {{ order.get_payment_type_display }}</p>

@@ -1,10 +1,23 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h2>{{ design.name }}</h2>
-<p><strong>Text Form:</strong> {{ design.text_form }}</p>
+<h2>Order Custom Bracelet</h2>
+<div class="mb-3">
+    <strong>Design Name:</strong> {{ design.name }}<br>
+    <strong>Design:</strong> {{ design.text_form }}
+</div>
 <div>
     <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
 </div>
+<form method="post" class="mt-4">
+    {% csrf_token %}
+    <label for="payment_type" class="form-label">Payment Type</label>
+    <select name="payment_type" id="payment_type" class="form-select mb-3">
+        <option value="gcash">GCash</option>
+        <option value="maya">Maya</option>
+    </select>
+    <button type="submit" class="btn btn-success">Place Order</button>
+    <a href="{% url 'customize_bracelet' %}" class="btn btn-link">Back to Designs</a>
+</form>
 <script>
 const beads = {{ design.beads|safe }};
 const canvas = document.getElementById('bracelet-canvas');

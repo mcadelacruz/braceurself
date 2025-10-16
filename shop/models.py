@@ -63,7 +63,31 @@ class CustomBraceletDesign(models.Model):
         return f"{self.name} ({self.customer.username})"
 
     def text_form(self):
-        # Example: "Circle-red-small, Square-blue-large, ..."
-        return ', '.join(
-            f"{b['shape']}-{b['color']}-{b['size']}" for b in self.beads
-        )
+        # Example: "1. Red Medium Circle | 2. Blue Small Square | ..."
+        bead_names = {
+            'circle': 'Circle',
+            'square': 'Square',
+            'triangle': 'Triangle',
+        }
+        color_names = {
+            '#ff0000': 'Red',
+            '#0000ff': 'Blue',
+            '#00ff00': 'Green',
+            '#ffff00': 'Yellow',
+            '#ff00ff': 'Magenta',
+            '#00ffff': 'Cyan',
+            '#ffffff': 'White',
+            '#000000': 'Black',
+        }
+        size_names = {
+            'small': 'Small',
+            'medium': 'Medium',
+            'large': 'Large',
+        }
+        parts = []
+        for idx, b in enumerate(self.beads, 1):
+            color = color_names.get(b.get('color'), b.get('color', 'Unknown'))
+            size = size_names.get(b.get('size'), b.get('size', 'Unknown'))
+            shape = bead_names.get(b.get('shape'), b.get('shape', 'Unknown'))
+            parts.append(f"{idx}. {color} {size} {shape}")
+        return " | ".join(parts)
