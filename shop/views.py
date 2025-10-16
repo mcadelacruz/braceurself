@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
-from .models import SellerProfile, Product, Order, OrderMessage
+from .models import SellerProfile, Product, Order, OrderMessage, CustomBraceletDesign
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.models import User
@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from decimal import Decimal
 import datetime
+from django.http import JsonResponse
 
 def home(request):
     return render(request, 'shop/home.html')
@@ -684,4 +685,61 @@ def update_seller_view(request):
 def customize_bracelet(request):
     if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
         return redirect('login')
-    return render(request, 'shop/customize_bracelet.html')
+    designs = CustomBraceletDesign.objects.filter(customer=request.user).order_by('-created_at')
+    return render(request, 'shop/customize_bracelet.html', {
+        'designs': designs,
+    })
+
+def bracelet_designer(request):
+    if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        beads = request.POST.get('beads', '[]')
+        import json
+        try:
+            beads_list = json.loads(beads)
+        except Exception:
+            beads_list = []
+        if not name or not (15 <= len(beads_list) <= 25):
+            messages.error(request, "Name required and design must have 15-25 beads.")
+            return render(request, 'shop/bracelet_designer.html', {
+                'name': name,
+                'beads': beads,
+            })
+        design = CustomBraceletDesign.objects.create(
+            name=name,
+            beads=beads_list,
+            customer=request.user
+        )
+        messages.success(request, "Design saved!")
+        return redirect('bracelet_design_detail', design_id=design.id)
+    return render(request, 'shop/bracelet_designer.html')
+
+def bracelet_design_detail(request, design_id):
+    design = get_object_or_404(CustomBraceletDesign, id=design_id, customer=request.user)
+    return render(request, 'shop/bracelet_design_detail.html', {
+        'design': design,
+    })
+
+def order_custom_bracelet(request, design_id):
+    if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    design = get_object_or_404(CustomBraceletDesign, id=design_id, customer=request.user)
+    if request.method == 'POST':
+        # Create an Order for this design (custom product)
+        order = Order.objects.create(
+            customer=request.user,
+            product=None,  # None for custom
+            quantity=1,
+            payment_type=request.POST.get('payment_type', 'gcash'),
+            status='waiting',
+            # Store design id in a custom field or in product (if you want to link)
+        )
+        order.custom_design_id = design.id  # You may want to add this field to Order model
+        order.save()
+        messages.success(request, "Custom bracelet order placed!")
+        return redirect('order_list')
+    return render(request, 'shop/order_custom_bracelet.html', {
+        'design': design,
+    })

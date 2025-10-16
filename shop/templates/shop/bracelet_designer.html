@@ -1,0 +1,112 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<h2 class="mb-3">Design Your Bracelet</h2>
+<form method="post" id="bracelet-save-form">
+    {% csrf_token %}
+    <div class="mb-2">
+        <label for="bracelet-name" class="form-label">Design Name</label>
+        <input type="text" name="name" id="bracelet-name" class="form-control" required>
+    </div>
+    <input type="hidden" name="beads" id="bracelet-beads-json">
+    <button type="submit" class="btn btn-success mt-2">Save Design</button>
+</form>
+<div class="row mt-4">
+    <div class="col-md-3">
+        <h5>Bead Palette</h5>
+        <div id="bead-palette">
+            <!-- Example beads -->
+            <div class="bead-option" draggable="true" data-shape="circle" data-color="red" data-size="small">🔴 Circle</div>
+            <div class="bead-option" draggable="true" data-shape="square" data-color="blue" data-size="small">🟦 Square</div>
+            <div class="bead-option" draggable="true" data-shape="oval" data-color="green" data-size="small">🟢 Oval</div>
+            <!-- Add more shapes/colors as needed -->
+        </div>
+        <div class="mt-3">
+            <label>Size:</label>
+            <select id="bead-size" class="form-select form-select-sm">
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+            </select>
+        </div>
+        <div class="mt-2">
+            <label>Color:</label>
+            <input type="color" id="bead-color" value="#ff0000" class="form-control form-control-sm" style="width:60px;">
+        </div>
+    </div>
+    <div class="col-md-9">
+        <h5>Bracelet Preview</h5>
+        <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
+        <div class="mt-2">
+            <span id="bead-count"></span>
+            <span class="text-muted ms-2">(Min: 15, Max: 25 beads)</span>
+        </div>
+    </div>
+</div>
+<script>
+const beadPalette = document.getElementById('bead-palette');
+const canvas = document.getElementById('bracelet-canvas');
+const ctx = canvas.getContext('2d');
+let beads = [];
+const minBeads = 15, maxBeads = 25;
+
+function drawBracelet() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const cx = canvas.width/2, cy = canvas.height/2, r = 150;
+    const n = beads.length;
+    for (let i=0; i<n; ++i) {
+        const angle = (2*Math.PI*i)/n;
+        const bx = cx + r*Math.cos(angle);
+        const by = cy + r*Math.sin(angle);
+        const bead = beads[i];
+        ctx.save();
+        ctx.beginPath();
+        ctx.fillStyle = bead.color || "#888";
+        let size = bead.size === "large" ? 28 : bead.size === "medium" ? 20 : 14;
+        if (bead.shape === "circle") {
+            ctx.arc(bx, by, size, 0, 2*Math.PI);
+            ctx.fill();
+        } else if (bead.shape === "square") {
+            ctx.rect(bx-size, by-size, size*2, size*2);
+            ctx.fill();
+        } else if (bead.shape === "oval") {
+            ctx.ellipse(bx, by, size, size/2, 0, 0, 2*Math.PI);
+            ctx.fill();
+        }
+        // Add more shapes as needed
+        ctx.restore();
+    }
+    document.getElementById('bead-count').textContent = `Beads: ${n}`;
+}
+
+canvas.addEventListener('dragover', e => e.preventDefault());
+canvas.addEventListener('drop', function(e) {
+    e.preventDefault();
+    if (beads.length >= maxBeads) return;
+    const shape = e.dataTransfer.getData('shape');
+    const color = e.dataTransfer.getData('color');
+    const size = e.dataTransfer.getData('size');
+    beads.push({shape, color, size});
+    drawBracelet();
+});
+
+document.querySelectorAll('.bead-option').forEach(opt => {
+    opt.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('shape', this.dataset.shape);
+        // Use current color/size pickers
+        e.dataTransfer.setData('color', document.getElementById('bead-color').value);
+        e.dataTransfer.setData('size', document.getElementById('bead-size').value);
+    });
+});
+
+document.getElementById('bracelet-save-form').addEventListener('submit', function(e) {
+    if (beads.length < minBeads || beads.length > maxBeads) {
+        alert("Bracelet must have between 15 and 25 beads.");
+        e.preventDefault();
+        return false;
+    }
+    document.getElementById('bracelet-beads-json').value = JSON.stringify(beads);
+});
+
+drawBracelet();
+</script>
+{% endblock %}

@@ -16,4 +16,7 @@ urlpatterns = [
     path('seller/order/<int:order_id>/manage/', views.manage_order, name='manage_order'),
     path('seller/update/', views.update_seller_view, name='update_seller'),
     path('customize/', views.customize_bracelet, name='customize_bracelet'),
+    path('customize/new/', views.bracelet_designer, name='bracelet_designer'),
+    path('customize/<int:design_id>/', views.bracelet_design_detail, name='bracelet_design_detail'),
+    path('customize/<int:design_id>/order/', views.order_custom_bracelet, name='order_custom_bracelet'),
 ]

@@ -1,0 +1,40 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<h2>{{ design.name }}</h2>
+<p><strong>Text Form:</strong> {{ design.text_form }}</p>
+<div>
+    <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
+</div>
+<script>
+const beads = {{ design.beads|safe }};
+const canvas = document.getElementById('bracelet-canvas');
+const ctx = canvas.getContext('2d');
+function drawBracelet() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const cx = canvas.width/2, cy = canvas.height/2, r = 150;
+    const n = beads.length;
+    for (let i=0; i<n; ++i) {
+        const angle = (2*Math.PI*i)/n;
+        const bx = cx + r*Math.cos(angle);
+        const by = cy + r*Math.sin(angle);
+        const bead = beads[i];
+        ctx.save();
+        ctx.beginPath();
+        ctx.fillStyle = bead.color || "#888";
+        let size = bead.size === "large" ? 28 : bead.size === "medium" ? 20 : 14;
+        if (bead.shape === "circle") {
+            ctx.arc(bx, by, size, 0, 2*Math.PI);
+            ctx.fill();
+        } else if (bead.shape === "square") {
+            ctx.rect(bx-size, by-size, size*2, size*2);
+            ctx.fill();
+        } else if (bead.shape === "oval") {
+            ctx.ellipse(bx, by, size, size/2, 0, 0, 2*Math.PI);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+drawBracelet();
+</script>
+{% endblock %}

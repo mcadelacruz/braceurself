@@ -1,7 +1,27 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<div class="text-center mt-5">
-    <h1>Customize Your Bracelet</h1>
-    <p class="lead">Here you can customize your bracelet. (Feature coming soon!)</p>
+<div class="text-center mt-4">
+    <h2>My Custom Bracelet Designs</h2>
+    <a href="{% url 'bracelet_designer' %}" class="btn btn-primary mb-3">Create New Design</a>
+    {% if designs %}
+        <div class="row">
+            {% for design in designs %}
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>{{ design.name }}</h5>
+                            <div>
+                                <strong>Design:</strong> {{ design.text_form }}
+                                <a href="{% url 'bracelet_design_detail' design.id %}" class="btn btn-sm btn-outline-secondary ms-2">View</a>
+                                <a href="{% url 'order_custom_bracelet' design.id %}" class="btn btn-sm btn-success ms-2">Order</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No designs yet.</p>
+    {% endif %}
 </div>
 {% endblock %}

@@ -52,3 +52,18 @@ class OrderMessage(models.Model):
 
     def __str__(self):
         return f"Message for Order #{self.order.id} by {self.sender.username}"
+
+class CustomBraceletDesign(models.Model):
+    name = models.CharField(max_length=100)
+    beads = models.JSONField()  # List of dicts: [{shape, color, size}, ...]
+    created_at = models.DateTimeField(auto_now_add=True)
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bracelet_designs')
+
+    def __str__(self):
+        return f"{self.name} ({self.customer.username})"
+
+    def text_form(self):
+        # Example: "Circle-red-small, Square-blue-large, ..."
+        return ', '.join(
+            f"{b['shape']}-{b['color']}-{b['size']}" for b in self.beads
+        )
