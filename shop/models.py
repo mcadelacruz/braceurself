@@ -63,7 +63,7 @@ class CustomBraceletDesign(models.Model):
         return f"{self.name} ({self.customer.username})"
 
     def text_form(self):
-        # Example: "1. Red Medium Circle | 2. Blue Small Square | ..."
+        # Returns a list of bead descriptions for vertical dropdown display
         bead_names = {
             'circle': 'Circle',
             'square': 'Square',
@@ -90,4 +90,4 @@ class CustomBraceletDesign(models.Model):
             size = size_names.get(b.get('size'), b.get('size', 'Unknown'))
             shape = bead_names.get(b.get('shape'), b.get('shape', 'Unknown'))
             parts.append(f"{idx}. {color} {size} {shape}")
-        return " | ".join(parts)
+        return parts

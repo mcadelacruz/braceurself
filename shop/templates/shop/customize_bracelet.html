@@ -6,22 +6,59 @@
     {% if designs %}
         <div class="row">
             {% for design in designs %}
-                <div class="col-md-6 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5>{{ design.name }}</h5>
-                            <div>
-                                <strong>Design:</strong> {{ design.text_form }}
-                                <a href="{% url 'bracelet_design_detail' design.id %}" class="btn btn-sm btn-outline-secondary ms-2">View</a>
-                                <a href="{% url 'order_custom_bracelet' design.id %}" class="btn btn-sm btn-success ms-2">Order</a>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                            <canvas id="bracelet-preview-{{ design.id }}" width="120" height="120" style="border:1px solid #eee; background:#fff; border-radius:50%; margin-bottom:10px;"></canvas>
+                            <h5 class="mb-2">{{ design.name }}</h5>
+                            <div class="d-flex justify-content-center gap-2 mt-2">
+                                <a href="{% url 'bracelet_design_detail' design.id %}" class="btn btn-sm btn-outline-secondary">View</a>
+                                <a href="{% url 'order_custom_bracelet' design.id %}" class="btn btn-sm btn-success">Order</a>
                                 <form method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="delete_design_id" value="{{ design.id }}">
-                                    <button type="submit" class="btn btn-sm btn-danger ms-2" onclick="return confirm('Delete this design?');">Delete</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this design?');">Delete</button>
                                 </form>
                             </div>
                         </div>
                     </div>
+                    <script>
+                    (function() {
+                        const beads = {{ design.beads|safe }};
+                        const canvas = document.getElementById('bracelet-preview-{{ design.id }}');
+                        if (!canvas) return;
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0,0,canvas.width,canvas.height);
+                        const cx = canvas.width/2, cy = canvas.height/2, r = 40;
+                        const n = beads.length;
+                        for (let i=0; i<n; ++i) {
+                            const angle = (2*Math.PI*i)/n;
+                            const bx = cx + r*Math.cos(angle);
+                            const by = cy + r*Math.sin(angle);
+                            const bead = beads[i];
+                            ctx.save();
+                            ctx.translate(bx, by);
+                            ctx.rotate(angle + Math.PI/2);
+                            ctx.beginPath();
+                            ctx.fillStyle = bead.color || "#888";
+                            let size = bead.size === "large" ? 12 : bead.size === "medium" ? 9 : 6;
+                            if (bead.shape === "circle") {
+                                ctx.arc(0, 0, size, 0, 2*Math.PI);
+                                ctx.fill();
+                            } else if (bead.shape === "square") {
+                                ctx.rect(-size, -size, size*2, size*2);
+                                ctx.fill();
+                            } else if (bead.shape === "triangle") {
+                                ctx.moveTo(0, -size);
+                                ctx.lineTo(size, size);
+                                ctx.lineTo(-size, size);
+                                ctx.closePath();
+                                ctx.fill();
+                            }
+                            ctx.restore();
+                        }
+                    })();
+                    </script>
                 </div>
             {% endfor %}
         </div>

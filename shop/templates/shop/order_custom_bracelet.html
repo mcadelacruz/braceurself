@@ -3,7 +3,12 @@
 <h2>Order Custom Bracelet</h2>
 <div class="mb-3">
     <strong>Design Name:</strong> {{ design.name }}<br>
-    <strong>Design:</strong> {{ design.text_form }}
+    <label for="beadDropdown" class="form-label"><strong>Design Details:</strong></label>
+    <select id="beadDropdown" class="form-select" size="8" style="max-width:320px;">
+        {% for bead in design.text_form %}
+            <option>{{ bead }}</option>
+        {% endfor %}
+    </select>
 </div>
 <div>
     <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>

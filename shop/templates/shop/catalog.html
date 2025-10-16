@@ -1,9 +1,13 @@
 {% extends 'shop/base.html' %}
 {% block content %}
 <h1 class="mb-4">Catalog</h1>
+<div class="mb-3">
+    <a href="{% url 'public_custom_designs' %}" class="btn btn-outline-primary">Browse Custom Designs</a>
+</div>
 {% if products %}
     <div class="row">
     {% for product in products %}
+        {% if not product.name|slice:":7" == "Custom:" %}
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 {% if product.image %}
@@ -24,6 +28,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     {% endfor %}
     </div>
 {% else %}

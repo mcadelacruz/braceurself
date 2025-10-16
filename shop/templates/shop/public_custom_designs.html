@@ -1,0 +1,64 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<h2 class="mb-4">Custom Designs by Other Customers</h2>
+{% if designs %}
+    <div class="row">
+        {% for design in designs %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <canvas id="bracelet-preview-{{ design.id }}" width="120" height="120" style="border:1px solid #eee; background:#fff; border-radius:50%; margin-bottom:10px;"></canvas>
+                        <h5 class="mb-2">{{ design.name }}</h5>
+                        <div class="mb-1 text-muted" style="font-size:0.95em;">By: {{ design.customer.username }}</div>
+                        <div class="d-flex justify-content-center gap-2 mt-2">
+                            <a href="{% url 'bracelet_design_detail' design.id %}" class="btn btn-sm btn-outline-secondary">View</a>
+                            {% if can_order %}
+                                <a href="{% url 'order_custom_bracelet' design.id %}" class="btn btn-sm btn-success">Order</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    const beads = {{ design.beads|safe }};
+                    const canvas = document.getElementById('bracelet-preview-{{ design.id }}');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    const cx = canvas.width/2, cy = canvas.height/2, r = 40;
+                    const n = beads.length;
+                    for (let i=0; i<n; ++i) {
+                        const angle = (2*Math.PI*i)/n;
+                        const bx = cx + r*Math.cos(angle);
+                        const by = cy + r*Math.sin(angle);
+                        const bead = beads[i];
+                        ctx.save();
+                        ctx.translate(bx, by);
+                        ctx.rotate(angle + Math.PI/2);
+                        ctx.beginPath();
+                        ctx.fillStyle = bead.color || "#888";
+                        let size = bead.size === "large" ? 12 : bead.size === "medium" ? 9 : 6;
+                        if (bead.shape === "circle") {
+                            ctx.arc(0, 0, size, 0, 2*Math.PI);
+                            ctx.fill();
+                        } else if (bead.shape === "square") {
+                            ctx.rect(-size, -size, size*2, size*2);
+                            ctx.fill();
+                        } else if (bead.shape === "triangle") {
+                            ctx.moveTo(0, -size);
+                            ctx.lineTo(size, size);
+                            ctx.lineTo(-size, size);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                        ctx.restore();
+                    }
+                })();
+                </script>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No public custom designs available.</p>
+{% endif %}
+{% endblock %}

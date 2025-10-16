@@ -126,39 +126,28 @@
                 {% endif %}
                 <p><strong>Product:</strong> {{ order.product.name }}</p>
                 {% if custom_design %}
-                    <div class="mb-2">
-                        <strong>Custom Design:</strong>
-                        <span>{{ custom_design.text_form }}</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="showBraceletModal()">View Design</button>
-                    </div>
-                    <!-- Modal for bracelet visualization -->
-                    <div id="braceletModal" class="modal" tabindex="-1" style="display:none;">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Bracelet Design: {{ custom_design.name }}</h5>
-                                    <button type="button" class="btn-close" onclick="hideBraceletModal()" aria-label="Close" style="background:none;border:none;font-size:2rem;line-height:1;color:#333;opacity:1;position:absolute;top:12px;right:18px;z-index:2;">&times;</button>
-                                </div>
-                                <div class="modal-body text-center">
-                                    <canvas id="bracelet-canvas-modal" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
-                                </div>
-                            </div>
+                    <div class="row mb-3">
+                        <div class="col-auto d-flex align-items-center justify-content-center">
+                            <canvas id="bracelet-preview-order" width="120" height="120" style="border:1px solid #eee; background:#fff; border-radius:50%;"></canvas>
+                        </div>
+                        <div class="col">
+                            <strong>Custom Design:</strong>
+                            <label for="beadDropdown{{ custom_design.id }}" class="form-label d-block mb-1">Design Details:</label>
+                            <select id="beadDropdown{{ custom_design.id }}" class="form-select mb-2" size="6" style="max-width:320px; height:120px;">
+                                {% for bead in custom_design.text_form %}
+                                    <option>{{ bead }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     <script>
-                    function showBraceletModal() {
-                        document.getElementById('braceletModal').style.display = 'flex';
-                        drawBraceletModal();
-                    }
-                    function hideBraceletModal() {
-                        document.getElementById('braceletModal').style.display = 'none';
-                    }
-                    function drawBraceletModal() {
+                    (function() {
                         const beads = {{ custom_design.beads|safe }};
-                        const canvas = document.getElementById('bracelet-canvas-modal');
+                        const canvas = document.getElementById('bracelet-preview-order');
+                        if (!canvas) return;
                         const ctx = canvas.getContext('2d');
                         ctx.clearRect(0,0,canvas.width,canvas.height);
-                        const cx = canvas.width/2, cy = canvas.height/2, r = 150;
+                        const cx = canvas.width/2, cy = canvas.height/2, r = 40;
                         const n = beads.length;
                         for (let i=0; i<n; ++i) {
                             const angle = (2*Math.PI*i)/n;
@@ -170,7 +159,7 @@
                             ctx.rotate(angle + Math.PI/2);
                             ctx.beginPath();
                             ctx.fillStyle = bead.color || "#888";
-                            let size = bead.size === "large" ? 28 : bead.size === "medium" ? 20 : 14;
+                            let size = bead.size === "large" ? 12 : bead.size === "medium" ? 9 : 6;
                             if (bead.shape === "circle") {
                                 ctx.arc(0, 0, size, 0, 2*Math.PI);
                                 ctx.fill();
@@ -186,14 +175,8 @@
                             }
                             ctx.restore();
                         }
-                    }
+                    })();
                     </script>
-                    <style>
-                    .modal { position: fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:9999; display:flex; align-items:center; justify-content:center; }
-                    .modal-dialog { max-width: 440px; }
-                    .modal-content { border-radius: 10px; position: relative; }
-                    .btn-close { cursor:pointer; }
-                    </style>
                 {% endif %}
                 <p><strong>Quantity:</strong> {{ order.quantity }}</p>
                 <p><strong>Payment:</strong> {{ order.get_payment_type_display }}</p>

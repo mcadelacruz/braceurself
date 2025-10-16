@@ -743,7 +743,8 @@ def bracelet_designer(request):
     return render(request, 'shop/bracelet_designer.html')
 
 def bracelet_design_detail(request, design_id):
-    design = get_object_or_404(CustomBraceletDesign, id=design_id, customer=request.user)
+    # Allow viewing any design, not just the user's own
+    design = get_object_or_404(CustomBraceletDesign, id=design_id)
     return render(request, 'shop/bracelet_design_detail.html', {
         'design': design,
     })
@@ -778,4 +779,20 @@ def order_custom_bracelet(request, design_id):
         return redirect('order_list')
     return render(request, 'shop/order_custom_bracelet.html', {
         'design': design,
+    })
+
+def public_custom_designs(request):
+    # Allow both customers and sellers to view, but only customers can order
+    if not request.user.is_authenticated:
+        return redirect('login')
+    # Show all designs except own if customer, or all if seller
+    if hasattr(request.user, 'sellerprofile'):
+        designs = CustomBraceletDesign.objects.all().order_by('-created_at')
+        can_order = False
+    else:
+        designs = CustomBraceletDesign.objects.exclude(customer=request.user).order_by('-created_at')
+        can_order = True
+    return render(request, 'shop/public_custom_designs.html', {
+        'designs': designs,
+        'can_order': can_order,
     })
