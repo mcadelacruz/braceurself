@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
@@ -116,21 +116,16 @@ def login_view(request):
         return redirect('home')
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
-        is_seller = request.POST.get('is_seller') == 'on'
+        # NOTE: checkbox removed from logic — auto-detect seller by credentials
         if form.is_valid():
             user = form.get_user()
-            if is_seller:
-                if hasattr(user, 'sellerprofile'):
-                    login(request, user)
-                    return redirect('seller_dashboard')
-                else:
-                    messages.error(request, "No seller account found for these credentials.")
-            else:
-                if hasattr(user, 'sellerprofile'):
-                    messages.error(request, "This account is a seller. Please login as seller.")
-                else:
-                    login(request, user)
-                    return redirect('home')
+            # If this user has a SellerProfile, treat them as seller
+            if hasattr(user, 'sellerprofile'):
+                login(request, user)
+                return redirect('seller_dashboard')
+            # Otherwise treat as regular customer
+            login(request, user)
+            return redirect('home')
         else:
             messages.error(request, "Invalid username or password.")
     else:
@@ -291,6 +286,57 @@ def product_order(request, product_id):
     else:
         form = OrderForm()
     return render(request, 'shop/product_order.html', {'product': product, 'form': form, 'error': error})
+
+# New: customer order detail/manage page (separate page instead of inline collapse)
+def customer_manage_order(request, order_id):
+    if not request.user.is_authenticated or hasattr(request.user, 'sellerprofile'):
+        return redirect('login')
+    order = get_object_or_404(Order, id=order_id, customer=request.user)
+    error = None
+    if request.method == 'POST':
+        # Cancellation takes precedence when cancel_order button is present
+        if 'cancel_order' in request.POST:
+            if order.cancelled:
+                messages.error(request, "Order is already cancelled.")
+            elif order.done:
+                messages.error(request, "Completed orders cannot be cancelled.")
+            else:
+                cancel_reason = request.POST.get('cancel_reason', '').strip()
+                if not cancel_reason:
+                    messages.error(request, "Please provide a reason for cancellation.")
+                else:
+                    # mark cancelled and restore stock
+                    order.cancelled = True
+                    order.cancel_reason = cancel_reason
+                    try:
+                        product = order.product
+                        product.stock += order.quantity
+                        product.save()
+                    except Exception:
+                        # continue even if stock restore fails, but log message for user
+                        messages.warning(request, "Order cancelled but failed to restore stock automatically.")
+                    order.save()
+                    messages.success(request, "Order cancelled.")
+                    return redirect('order_list')
+        else:
+            # Handle sending a message
+            msg_form = OrderMessageForm(request.POST, request.FILES)
+            if msg_form.is_valid():
+                msg = msg_form.save(commit=False)
+                msg.order = order
+                msg.sender = request.user
+                msg.save()
+                messages.success(request, "Message sent.")
+                return redirect('customer_manage_order', order_id=order.id)
+            else:
+                messages.error(request, "Failed to send message. Please correct errors below.")
+    else:
+        msg_form = OrderMessageForm()
+    return render(request, 'shop/customer_manage_order.html', {
+        'order': order,
+        'msg_form': msg_form,
+        'error': error,
+    })
 
 def manage_order(request, order_id):
     if not request.user.is_authenticated or not hasattr(request.user, 'sellerprofile'):

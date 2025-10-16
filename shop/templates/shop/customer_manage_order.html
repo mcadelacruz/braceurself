@@ -1,0 +1,186 @@
+{% extends 'shop/base.html' %}
+{% block content %}
+<!-- compact message controls CSS -->
+<style>
+/* Scope to this page to avoid affecting other pages */
+.customer-messages .messages-list {
+    min-height: 180px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+/* Compact controls row */
+.customer-messages .msg-controls {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+    align-items: center;
+    margin-top: .75rem;
+}
+
+/* Small text input / textarea */
+.customer-messages textarea[name="text"],
+.customer-messages input[name="text"] {
+    width: 100%;
+    height: 44px;
+    padding: .5rem .75rem;
+    font-size: 1rem;
+    border-radius: .5rem;
+    border: 1px solid #ced4da;
+    resize: none;
+    box-sizing: border-box;
+}
+
+/* Compact file picker */
+.customer-messages .custom-file-label {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    border: 1px solid #ced4da;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: background .2s;
+    padding: 0;
+}
+.customer-messages .custom-file-label:hover {
+    background: #e2e6ea;
+}
+.customer-messages input[type="file"] {
+    display: none;
+}
+
+/* Compact send button */
+.customer-messages button[type="submit"] {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    border: 1px solid #ced4da;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: background .2s;
+    padding: 0;
+}
+.customer-messages button[type="submit"]:hover {
+    background: #e2e6ea;
+}
+
+/* Ensure on very small screens controls wrap nicely */
+@media (max-width: 480px) {
+    .customer-messages .msg-controls { flex-wrap: wrap; }
+    .customer-messages input[type="file"] { width: 100%; }
+    .customer-messages textarea[name="text"] { max-width: 100%; flex-basis: 60%; }
+}
+.customer-messages .msg-textbox {
+    flex: 1 1 auto;
+}
+.customer-messages .right-btns {
+    display: flex;
+    gap: 8px; /* small gap between image and send button */
+}
+.customer-messages .square-btn,
+.customer-messages .custom-file-label {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    border: 1px solid #ced4da;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: background .2s;
+    padding: 0;
+}
+.customer-messages .custom-file-label:hover,
+.customer-messages .square-btn:hover {
+    background: #e2e6ea;
+}
+.customer-messages .file-name {
+    font-size: .85rem;
+    color: #555;
+    margin-left: 6px;
+}
+</style>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h4>Order #{{ order.id }}</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                {% if order.product.image %}
+                    <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" class="mb-3 rounded" style="width:100%;height:220px;object-fit:cover;">
+                {% endif %}
+                <p><strong>Product:</strong> {{ order.product.name }}</p>
+                <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                <p><strong>Payment:</strong> {{ order.get_payment_type_display }}</p>
+                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                {% if order.done %}<span class="badge bg-success">Done</span>{% endif %}
+                {% if order.cancelled %}
+                    <div class="alert alert-danger mt-2"><strong>Cancelled</strong><br>Reason: {{ order.cancel_reason }}</div>
+                {% else %}
+                    <!-- Cancellation form for customer -->
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <label for="cancel_reason" class="form-label">Reason for cancellation</label>
+                            <textarea name="cancel_reason" id="cancel_reason" class="form-control" rows="2" placeholder="Provide reason for cancelling this order"></textarea>
+                        </div>
+                        <button type="submit" name="cancel_order" class="btn btn-danger">Cancel Order</button>
+                    </form>
+                {% endif %}
+                <a href="{% url 'order_list' %}" class="btn btn-link mt-3">Back to Orders</a>
+            </div>
+            <div class="col-md-6">
+                <h6>Messages</h6>
+                <div class="customer-messages">
+                    <div class="messages-list">
+                        {% for msg in order.messages.all %}
+                            <div class="mb-2 {% if msg.sender == user %}text-end{% endif %}">
+                                <small class="text-muted">{{ msg.sender.username }} • {{ msg.timestamp|date:"Y-m-d H:i" }}</small><br>
+                                {% if msg.text %}<div class="mt-1">{{ msg.text|linebreaksbr }}</div>{% endif %}
+                                {% if msg.image %}<img src="{{ msg.image.url }}" style="max-width:240px;max-height:240px;" class="rounded mt-1">{% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">No messages yet.</p>
+                        {% endfor %}
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" class="msg-controls">
+                        {% csrf_token %}
+                        {{ msg_form.non_field_errors }}
+                        <div class="msg-textbox">
+                            {{ msg_form.text }}
+                            {{ msg_form.text.errors }}
+                        </div>
+                        <div class="right-btns">
+                            <label for="customer-msg-image" class="custom-file-label" title="Attach image">
+                                <span>📷</span>
+                            </label>
+                            <input type="file" name="image" id="customer-msg-image" accept="image/*"
+                                onchange="document.getElementById('customer-file-name').textContent = this.files[0] ? this.files[0].name : '';">
+                            <button type="submit" class="square-btn btn btn-outline-primary" title="Send">
+                                <span class="bi bi-send" style="font-size:1.2em;">&#10148;</span>
+                            </button>
+                        </div>
+                        <span id="customer-file-name" class="file-name"></span>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
