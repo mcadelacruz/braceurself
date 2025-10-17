@@ -1,7 +1,176 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<div class="text-center mt-5">
-    <h1 class="display-4">Braceurself!</h1>
-    <p class="lead">Your one-stop shop for beautiful bracelets.</p>
+<style>
+    .hero-section {
+        background: #fff;
+        color: #111;
+        padding: 70px 0 40px 0;
+        text-align: center;
+        border-radius: var(--border-radius);
+        margin-bottom: 0;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+        border: 1.5px solid #eee;
+    }
+    .hero-section h1 {
+        font-family: 'Pacifico', cursive;
+        font-size: 4.2rem;
+        color: #111;
+        letter-spacing: 2px;
+        margin-bottom: 0.5em;
+        font-weight: 700;
+    }
+    .hero-section .subtitle {
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-size: 1.3rem;
+        color: #444;
+        margin-bottom: 2em;
+        font-weight: 500;
+    }
+    .scroll-down {
+        position: absolute;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        color: #bbb;
+        opacity: 0.7;
+        font-size: 2.2rem;
+        animation: bounce 1.5s infinite;
+        z-index: 2;
+    }
+    @keyframes bounce {
+        0%, 100% { transform: translateX(-50%) translateY(0);}
+        50% { transform: translateX(-50%) translateY(10px);}
+    }
+    .material-section-title {
+        font-family: 'Montserrat', 'Roboto', Arial, sans-serif;
+        font-weight: 700;
+        color: #111;
+        letter-spacing: 1px;
+        margin-bottom: 1.5rem;
+        font-size: 2.1rem;
+    }
+    .material-divider {
+        border: none;
+        border-top: 1.5px solid #ececec;
+        margin: 2.5rem 0 2rem 0;
+    }
+    .material-card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        border: 1.5px solid #eee;
+        background: #fff;
+        transition: box-shadow .2s, transform .2s;
+    }
+    .material-card:hover {
+        box-shadow: 0 8px 32px 0 rgba(0,0,0,0.10);
+        transform: translateY(-4px) scale(1.02);
+    }
+    .material-card .card-title {
+        color: #111;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin-bottom: 0.7em;
+    }
+    .material-card .card-text {
+        color: #444;
+        font-size: 1.08rem;
+    }
+    .material-chip {
+        display: inline-block;
+        padding: 0.4em 1.1em;
+        border-radius: 999px;
+        background: #f1f1f1;
+        color: #222;
+        font-size: 0.95em;
+        margin: 0 0.2em 0.2em 0;
+    }
+    .material-chip.secondary {
+        background: #e0e0e0;
+        color: #222;
+    }
+    .material-btn-link {
+        background: none;
+        border: none;
+        color: #111;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 1em;
+        padding: 0;
+    }
+    .material-btn-link:hover {
+        color: #222;
+    }
+    .material-icons {
+        font-size: 2.2rem;
+        color: #bbb;
+        vertical-align: middle;
+    }
+    @media (max-width: 768px) {
+        .hero-section h1 {
+            font-size: 2.1rem;
+        }
+        .material-section-title {
+            font-size: 1.3rem;
+        }
+    }
+</style>
+
+<div class="hero-section mb-0">
+    <h1>Braceurself</h1>
+    <div class="subtitle">Your one-stop shop for beautiful, custom bracelets.</div>
+    <a href="#discover" class="scroll-down" aria-label="Scroll Down">
+        <span class="material-icons">expand_more</span>
+    </a>
+</div>
+
+<div id="discover"></div>
+<div class="container py-5">
+    <div class="material-section-title text-center">Discover Our Collection</div>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="material-card card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons mb-2">storefront</span>
+                    <h5 class="card-title">Shop Our Catalog</h5>
+                    <p class="card-text">Browse our wide selection of pre-made bracelets, crafted with care and style. Find the perfect accessory for any occasion.</p>
+                    <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg mt-2">Go to Catalog</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="material-card card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons mb-2">brush</span>
+                    <h5 class="card-title">Create Your Own</h5>
+                    <p class="card-text">Design a unique bracelet that's all your own. Choose shapes, colors, and even add letters to make it truly personal.</p>
+                    <a href="{% url 'customize_bracelet' %}" class="btn btn-primary btn-lg mt-2">Customize Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr class="material-divider">
+    <div class="material-section-title text-center">Why Braceurself?</div>
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-6">
+            <div class="material-card card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons mb-2">verified</span>
+                    <h6 class="card-title">Quality Materials</h6>
+                    <p class="card-text">We use only the best beads and cords for durability and comfort.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="material-card card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons mb-2">palette</span>
+                    <h6 class="card-title">Endless Customization</h6>
+                    <p class="card-text">Choose from a wide variety of shapes, colors, and even add letters to make your bracelet truly yours.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

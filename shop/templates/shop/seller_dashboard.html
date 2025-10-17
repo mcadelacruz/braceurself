@@ -83,6 +83,7 @@
 			<div class="card-header">Recent Products ({{ total_products }})</div>
 			<ul class="list-group list-group-flush">
 				{% for product in products %}
+                    {% if not product.name|slice:":7" == "Custom:" %}
 					<li class="list-group-item d-flex align-items-center">
 						{% if product.image %}
 							<img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:40px;height:40px;object-fit:cover;" class="me-2 rounded">
@@ -96,6 +97,7 @@
 							<small>Price: ${{ product.price }} • Stock: {{ product.stock }}</small>
 						</div>
 					</li>
+                    {% endif %}
 				{% empty %}
 					<li class="list-group-item">No products yet.</li>
 				{% endfor %}

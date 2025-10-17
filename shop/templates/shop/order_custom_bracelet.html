@@ -1,31 +1,58 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h2>Order Custom Bracelet</h2>
-<button type="button" class="btn btn-outline-secondary mb-3" onclick="window.history.back();">Back</button>
-<div class="row mb-3">
-    <div class="col-md-5">
-        <strong>Design Name:</strong> {{ design.name }}<br>
-        <label for="beadDropdown" class="form-label"><strong>Design Details:</strong></label>
-        <select id="beadDropdown" class="form-select" size="8" style="max-width:320px;">
-            {% for bead in design.text_form %}
-                <option>{{ bead }}</option>
-            {% endfor %}
+<style>
+    .material-section-title {
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-weight: 700;
+        color: #111;
+        letter-spacing: 1px;
+        margin: 2.5rem 0 1.5rem 0;
+        font-size: 2.1rem;
+        text-align: center;
+    }
+    .material-card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        border: 1.5px solid #eee;
+        background: #fff;
+        transition: box-shadow .2s, transform .2s;
+    }
+    .material-card .card-body {
+        padding: 2rem 1.5rem;
+    }
+</style>
+<div class="container">
+    <div class="material-section-title">Order Custom Bracelet</div>
+    <button type="button" class="btn btn-outline-primary mb-3" onclick="window.history.back();">Back</button>
+    <div class="row mb-3">
+        <div class="col-md-5">
+            <strong>Design Name:</strong> {{ design.name }}<br>
+            <label for="beadDropdown" class="form-label"><strong>Design Details:</strong></label>
+            <select id="beadDropdown" class="form-select" size="8" style="max-width:320px;">
+                {% for bead in design.text_form %}
+                    <option>{{ bead }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-7 d-flex align-items-center justify-content-center">
+            <div class="material-card card w-100">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <label for="payment_type" class="form-label">Payment Type</label>
+        <select name="payment_type" id="payment_type" class="form-select mb-3">
+            <option value="gcash">GCash</option>
+            <option value="maya">Maya</option>
         </select>
-    </div>
-    <div class="col-md-7 d-flex align-items-center justify-content-center">
-        <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
-    </div>
+        <button type="submit" class="btn btn-primary">Place Order</button>
+        <a href="{% url 'customize_bracelet' %}" class="btn btn-link">Back to Designs</a>
+    </form>
 </div>
-<form method="post" class="mt-4">
-    {% csrf_token %}
-    <label for="payment_type" class="form-label">Payment Type</label>
-    <select name="payment_type" id="payment_type" class="form-select mb-3">
-        <option value="gcash">GCash</option>
-        <option value="maya">Maya</option>
-    </select>
-    <button type="submit" class="btn btn-success">Place Order</button>
-    <a href="{% url 'customize_bracelet' %}" class="btn btn-link">Back to Designs</a>
-</form>
 <script>
 function isLightColor(hex) {
     if (!hex) return false;

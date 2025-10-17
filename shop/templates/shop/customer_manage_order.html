@@ -112,196 +112,215 @@
     color: #555;
     margin-left: 6px;
 }
+.material-section-title {
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: 1px;
+    margin: 2.5rem 0 1.5rem 0;
+    font-size: 2.1rem;
+    text-align: center;
+}
+.material-card {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid #eee;
+    background: #fff;
+    transition: box-shadow .2s, transform .2s;
+}
+.material-card .card-body {
+    padding: 2rem 1.5rem;
+}
 </style>
 
-<div class="card mt-4">
-    <div class="card-header">
-        <h4>Order #{{ order.id }}</h4>
-    </div>
-    <div class="card-body">
-        <button type="button" class="btn btn-outline-secondary mb-3" onclick="window.history.back();">Back</button>
-        <div class="row">
-            <div class="col-md-6">
-                {% if order.product.image %}
-                    <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" class="mb-3 rounded" style="width:100%;height:220px;object-fit:cover;">
-                {% endif %}
-                <p><strong>Product:</strong> {{ order.product.name }}</p>
-                {% if custom_design %}
-                    <div class="row mb-3">
-                        <div class="col-auto d-flex align-items-center justify-content-center">
-                            <canvas id="bracelet-preview-order" width="120" height="120" style="border:1px solid #eee; background:#fff; border-radius:50%;"></canvas>
+<div class="container">
+    <div class="material-section-title">Order #{{ order.id }}</div>
+    <button type="button" class="btn btn-outline-primary mb-3" onclick="window.history.back();">Back</button>
+    <div class="card material-card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {% if order.product.image %}
+                        <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}" class="mb-3 rounded" style="width:100%;height:220px;object-fit:cover;">
+                    {% endif %}
+                    <p><strong>Product:</strong> {{ order.product.name }}</p>
+                    {% if custom_design %}
+                        <div class="row mb-3">
+                            <div class="col-auto d-flex align-items-center justify-content-center">
+                                <canvas id="bracelet-preview-order" width="120" height="120" style="border:1px solid #eee; background:#fff; border-radius:50%;"></canvas>
+                            </div>
+                            <div class="col">
+                                <strong>Custom Design:</strong>
+                                <label for="beadDropdown{{ custom_design.id }}" class="form-label d-block mb-1">Design Details:</label>
+                                <select id="beadDropdown{{ custom_design.id }}" class="form-select mb-2" size="6" style="max-width:320px; height:120px;">
+                                    {% for bead in custom_design.text_form %}
+                                        <option>{{ bead }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                        <div class="col">
-                            <strong>Custom Design:</strong>
-                            <label for="beadDropdown{{ custom_design.id }}" class="form-label d-block mb-1">Design Details:</label>
-                            <select id="beadDropdown{{ custom_design.id }}" class="form-select mb-2" size="6" style="max-width:320px; height:120px;">
-                                {% for bead in custom_design.text_form %}
-                                    <option>{{ bead }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <script>
-                    (function() {
-                        function isLightColor(hex) {
-                            if (!hex) return false;
-                            hex = hex.replace('#', '');
-                            if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
-                            if (hex.length !== 6) return false;
-                            const r = parseInt(hex.substr(0,2),16);
-                            const g = parseInt(hex.substr(2,2),16);
-                            const b = parseInt(hex.substr(4,2),16);
-                            const luminance = 0.299*r + 0.587*g + 0.114*b;
-                            return luminance > 180;
-                        }
-                        const beads = {{ custom_design.beads|safe }};
-                        const canvas = document.getElementById('bracelet-preview-order');
-                        if (!canvas) return;
-                        const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0,0,canvas.width,canvas.height);
-                        const cx = canvas.width/2, cy = canvas.height/2, r = 40;
-                        const n = beads.length;
-                        for (let i=0; i<n; ++i) {
-                            const angle = (2*Math.PI*i)/n;
-                            const bx = cx + r*Math.cos(angle);
-                            const by = cy + r*Math.sin(angle);
-                            const bead = beads[i];
-                            ctx.save();
-                            ctx.translate(bx, by);
-                            ctx.rotate(angle + Math.PI/2);
-                            ctx.strokeStyle = "#888";
-                            ctx.lineWidth = 2;
-                            ctx.beginPath();
-                            ctx.fillStyle = bead.color || "#888";
-                            let size = bead.size === "large" ? 12 : bead.size === "medium" ? 9 : 6;
-                            if (bead.shape === "circle") {
-                                ctx.arc(0, 0, size, 0, 2*Math.PI);
-                                ctx.fill();
-                                ctx.stroke();
-                            } else if (bead.shape === "square") {
-                                ctx.rect(-size, -size, size*2, size*2);
-                                ctx.fill();
-                                ctx.stroke();
-                            } else if (bead.shape === "triangle") {
-                                ctx.moveTo(0, -size);
-                                ctx.lineTo(size, size);
-                                ctx.lineTo(-size, size);
-                                ctx.closePath();
-                                ctx.fill();
-                                ctx.stroke();
-                            } else if (bead.shape === "star") {
-                                ctx.beginPath();
-                                for (let j = 0; j < 5; j++) {
-                                    ctx.lineTo(
-                                        Math.cos((18 + j * 72) / 180 * Math.PI) * size,
-                                        -Math.sin((18 + j * 72) / 180 * Math.PI) * size
-                                    );
-                                    ctx.lineTo(
-                                        Math.cos((54 + j * 72) / 180 * Math.PI) * size * 0.5,
-                                        -Math.sin((54 + j * 72) / 180 * Math.PI) * size * 0.5
-                                    );
-                                }
-                                ctx.closePath();
-                                ctx.fill();
-                                ctx.stroke();
-                            } else if (bead.shape === "heart") {
-                                ctx.beginPath();
-                                ctx.moveTo(0, size/2);
-                                ctx.bezierCurveTo(size, -size/2, size/2, -size, 0, -size/3);
-                                ctx.bezierCurveTo(-size/2, -size, -size, -size/2, 0, size/2);
-                                ctx.closePath();
-                                ctx.fill();
-                                ctx.stroke();
-                            } else if (bead.shape === "hexagon") {
-                                ctx.beginPath();
-                                for (let j = 0; j < 6; j++) {
-                                    let a = Math.PI/3 * j;
-                                    let x = Math.cos(a) * size;
-                                    let y = Math.sin(a) * size;
-                                    if (j === 0) ctx.moveTo(x, y);
-                                    else ctx.lineTo(x, y);
-                                }
-                                ctx.closePath();
-                                ctx.fill();
-                                ctx.stroke();
-                            } else if (bead.shape === "diamond") {
-                                ctx.beginPath();
-                                ctx.moveTo(0, -size);
-                                ctx.lineTo(size, 0);
-                                ctx.lineTo(0, size);
-                                ctx.lineTo(-size, 0);
-                                ctx.closePath();
-                                ctx.fill();
-                                ctx.stroke();
+                        <script>
+                        (function() {
+                            function isLightColor(hex) {
+                                if (!hex) return false;
+                                hex = hex.replace('#', '');
+                                if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+                                if (hex.length !== 6) return false;
+                                const r = parseInt(hex.substr(0,2),16);
+                                const g = parseInt(hex.substr(2,2),16);
+                                const b = parseInt(hex.substr(4,2),16);
+                                const luminance = 0.299*r + 0.587*g + 0.114*b;
+                                return luminance > 180;
                             }
-                            // Draw letter if present
-                            if (bead.letter) {
+                            const beads = {{ custom_design.beads|safe }};
+                            const canvas = document.getElementById('bracelet-preview-order');
+                            if (!canvas) return;
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0,0,canvas.width,canvas.height);
+                            const cx = canvas.width/2, cy = canvas.height/2, r = 40;
+                            const n = beads.length;
+                            for (let i=0; i<n; ++i) {
+                                const angle = (2*Math.PI*i)/n;
+                                const bx = cx + r*Math.cos(angle);
+                                const by = cy + r*Math.sin(angle);
+                                const bead = beads[i];
                                 ctx.save();
-                                ctx.font = `${size*1.2}px Arial Black,Arial,sans-serif`;
-                                ctx.fillStyle = isLightColor(bead.color) ? "#000" : "#fff";
-                                ctx.textAlign = "center";
-                                ctx.textBaseline = "middle";
-                                ctx.fillText(bead.letter, 0, 0);
+                                ctx.translate(bx, by);
+                                ctx.rotate(angle + Math.PI/2);
+                                ctx.strokeStyle = "#888";
+                                ctx.lineWidth = 2;
+                                ctx.beginPath();
+                                ctx.fillStyle = bead.color || "#888";
+                                let size = bead.size === "large" ? 12 : bead.size === "medium" ? 9 : 6;
+                                if (bead.shape === "circle") {
+                                    ctx.arc(0, 0, size, 0, 2*Math.PI);
+                                    ctx.fill();
+                                    ctx.stroke();
+                                } else if (bead.shape === "square") {
+                                    ctx.rect(-size, -size, size*2, size*2);
+                                    ctx.fill();
+                                    ctx.stroke();
+                                } else if (bead.shape === "triangle") {
+                                    ctx.moveTo(0, -size);
+                                    ctx.lineTo(size, size);
+                                    ctx.lineTo(-size, size);
+                                    ctx.closePath();
+                                    ctx.fill();
+                                    ctx.stroke();
+                                } else if (bead.shape === "star") {
+                                    ctx.beginPath();
+                                    for (let j = 0; j < 5; j++) {
+                                        ctx.lineTo(
+                                            Math.cos((18 + j * 72) / 180 * Math.PI) * size,
+                                            -Math.sin((18 + j * 72) / 180 * Math.PI) * size
+                                        );
+                                        ctx.lineTo(
+                                            Math.cos((54 + j * 72) / 180 * Math.PI) * size * 0.5,
+                                            -Math.sin((54 + j * 72) / 180 * Math.PI) * size * 0.5
+                                        );
+                                    }
+                                    ctx.closePath();
+                                    ctx.fill();
+                                    ctx.stroke();
+                                } else if (bead.shape === "heart") {
+                                    ctx.beginPath();
+                                    ctx.moveTo(0, size/2);
+                                    ctx.bezierCurveTo(size, -size/2, size/2, -size, 0, -size/3);
+                                    ctx.bezierCurveTo(-size/2, -size, -size, -size/2, 0, size/2);
+                                    ctx.closePath();
+                                    ctx.fill();
+                                    ctx.stroke();
+                                } else if (bead.shape === "hexagon") {
+                                    ctx.beginPath();
+                                    for (let j = 0; j < 6; j++) {
+                                        let a = Math.PI/3 * j;
+                                        let x = Math.cos(a) * size;
+                                        let y = Math.sin(a) * size;
+                                        if (j === 0) ctx.moveTo(x, y);
+                                        else ctx.lineTo(x, y);
+                                    }
+                                    ctx.closePath();
+                                    ctx.fill();
+                                    ctx.stroke();
+                                } else if (bead.shape === "diamond") {
+                                    ctx.beginPath();
+                                    ctx.moveTo(0, -size);
+                                    ctx.lineTo(size, 0);
+                                    ctx.lineTo(0, size);
+                                    ctx.lineTo(-size, 0);
+                                    ctx.closePath();
+                                    ctx.fill();
+                                    ctx.stroke();
+                                }
+                                // Draw letter if present
+                                if (bead.letter) {
+                                    ctx.save();
+                                    ctx.font = `${size*1.2}px Arial Black,Arial,sans-serif`;
+                                    ctx.fillStyle = isLightColor(bead.color) ? "#000" : "#fff";
+                                    ctx.textAlign = "center";
+                                    ctx.textBaseline = "middle";
+                                    ctx.fillText(bead.letter, 0, 0);
+                                    ctx.restore();
+                                }
                                 ctx.restore();
                             }
-                            ctx.restore();
-                        }
-                    })();
-                    </script>
-                {% endif %}
-                <p><strong>Quantity:</strong> {{ order.quantity }}</p>
-                <p><strong>Payment:</strong> {{ order.get_payment_type_display }}</p>
-                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-                {% if order.done %}<span class="badge bg-success">Done</span>{% endif %}
-                {% if order.cancelled %}
-                    <div class="alert alert-danger mt-2"><strong>Cancelled</strong><br>Reason: {{ order.cancel_reason }}</div>
-                {% else %}
-                    <!-- Cancellation form for customer -->
-                    <form method="post" class="mt-3">
-                        {% csrf_token %}
-                        <div class="mb-2">
-                            <label for="cancel_reason" class="form-label">Reason for cancellation</label>
-                            <textarea name="cancel_reason" id="cancel_reason" class="form-control" rows="2" placeholder="Provide reason for cancelling this order"></textarea>
-                        </div>
-                        <button type="submit" name="cancel_order" class="btn btn-danger">Cancel Order</button>
-                    </form>
-                {% endif %}
-                <a href="{% url 'order_list' %}" class="btn btn-link mt-3">Back to Orders</a>
-            </div>
-            <div class="col-md-6">
-                <h6>Messages</h6>
-                <div class="customer-messages">
-                    <div class="messages-list">
-                        {% for msg in order.messages.all %}
-                            <div class="mb-2 {% if msg.sender == user %}text-end{% endif %}">
-                                <small class="text-muted">{{ msg.sender.username }} • {{ msg.timestamp|date:"Y-m-d H:i" }}</small><br>
-                                {% if msg.text %}<div class="mt-1">{{ msg.text|linebreaksbr }}</div>{% endif %}
-                                {% if msg.image %}<img src="{{ msg.image.url }}" style="max-width:240px;max-height:240px;" class="rounded mt-1">{% endif %}
+                        })();
+                        </script>
+                    {% endif %}
+                    <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                    <p><strong>Payment:</strong> {{ order.get_payment_type_display }}</p>
+                    <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                    {% if order.done %}<span class="badge bg-success">Done</span>{% endif %}
+                    {% if order.cancelled %}
+                        <div class="alert alert-danger mt-2"><strong>Cancelled</strong><br>Reason: {{ order.cancel_reason }}</div>
+                    {% else %}
+                        <!-- Cancellation form for customer -->
+                        <form method="post" class="mt-3">
+                            {% csrf_token %}
+                            <div class="mb-2">
+                                <label for="cancel_reason" class="form-label">Reason for cancellation</label>
+                                <textarea name="cancel_reason" id="cancel_reason" class="form-control" rows="2" placeholder="Provide reason for cancelling this order"></textarea>
                             </div>
-                        {% empty %}
-                            <p class="text-muted">No messages yet.</p>
-                        {% endfor %}
-                    </div>
+                            <button type="submit" name="cancel_order" class="btn btn-danger">Cancel Order</button>
+                        </form>
+                    {% endif %}
+                    <a href="{% url 'order_list' %}" class="btn btn-link mt-3">Back to Orders</a>
+                </div>
+                <div class="col-md-6">
+                    <h6>Messages</h6>
+                    <div class="customer-messages">
+                        <div class="messages-list">
+                            {% for msg in order.messages.all %}
+                                <div class="mb-2 {% if msg.sender == user %}text-end{% endif %}">
+                                    <small class="text-muted">{{ msg.sender.username }} • {{ msg.timestamp|date:"Y-m-d H:i" }}</small><br>
+                                    {% if msg.text %}<div class="mt-1">{{ msg.text|linebreaksbr }}</div>{% endif %}
+                                    {% if msg.image %}<img src="{{ msg.image.url }}" style="max-width:240px;max-height:240px;" class="rounded mt-1">{% endif %}
+                                </div>
+                            {% empty %}
+                                <p class="text-muted">No messages yet.</p>
+                            {% endfor %}
+                        </div>
 
-                    <form method="post" enctype="multipart/form-data" class="msg-controls">
-                        {% csrf_token %}
-                        {{ msg_form.non_field_errors }}
-                        <div class="msg-textbox">
-                            {{ msg_form.text }}
-                            {{ msg_form.text.errors }}
-                        </div>
-                        <div class="right-btns">
-                            <label for="customer-msg-image" class="custom-file-label" title="Attach image">
-                                <span>📷</span>
-                            </label>
-                            <input type="file" name="image" id="customer-msg-image" accept="image/*"
-                                onchange="document.getElementById('customer-file-name').textContent = this.files[0] ? this.files[0].name : '';">
-                            <button type="submit" class="square-btn btn btn-outline-primary" title="Send">
-                                <span class="bi bi-send" style="font-size:1.2em;">&#10148;</span>
-                            </button>
-                        </div>
-                        <span id="customer-file-name" class="file-name"></span>
-                    </form>
+                        <form method="post" enctype="multipart/form-data" class="msg-controls">
+                            {% csrf_token %}
+                            {{ msg_form.non_field_errors }}
+                            <div class="msg-textbox">
+                                {{ msg_form.text }}
+                                {{ msg_form.text.errors }}
+                            </div>
+                            <div class="right-btns">
+                                <label for="customer-msg-image" class="custom-file-label" title="Attach image">
+                                    <span>📷</span>
+                                </label>
+                                <input type="file" name="image" id="customer-msg-image" accept="image/*"
+                                    onchange="document.getElementById('customer-file-name').textContent = this.files[0] ? this.files[0].name : '';">
+                                <button type="submit" class="square-btn btn btn-outline-primary" title="Send">
+                                    <span class="bi bi-send" style="font-size:1.2em;">&#10148;</span>
+                                </button>
+                            </div>
+                            <span id="customer-file-name" class="file-name"></span>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

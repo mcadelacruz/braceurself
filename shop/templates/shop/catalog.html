@@ -1,37 +1,90 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h1 class="mb-4">Catalog</h1>
-<div class="mb-3">
-    <a href="{% url 'public_custom_designs' %}" class="btn btn-outline-primary">Browse Custom Designs</a>
-</div>
-{% if products %}
-    <div class="row">
-    {% for product in products %}
-        {% if not product.name|slice:":7" == "Custom:" %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="width:100%;height:160px;object-fit:cover;">
-                {% else %}
-                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:160px;">
-                        <span class="text-muted">No image</span>
-                    </div>
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ product.name }}</h5>
-                    <p class="card-text">Price: ${{ product.price }}<br>Stock: {{ product.stock }}</p>
-                    {% if user.is_authenticated and not user.sellerprofile and product.stock > 0 %}
-                        <a href="{% url 'product_order' product.id %}" class="btn btn-primary">Order</a>
-                    {% elif product.stock <= 0 %}
-                        <span class="badge bg-danger">Out of stock</span>
+<style>
+    .catalog-title {
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-weight: 700;
+        color: #111;
+        letter-spacing: 1px;
+        margin: 2.5rem 0 1.5rem 0;
+        font-size: 2.1rem;
+        text-align: center;
+    }
+    .material-card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        border: 1.5px solid #eee;
+        background: #fff;
+        transition: box-shadow .2s, transform .2s;
+    }
+    .material-card:hover {
+        box-shadow: 0 8px 32px 0 rgba(0,0,0,0.10);
+        transform: translateY(-4px) scale(1.02);
+    }
+    .material-card .card-title {
+        color: #111;
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin-bottom: 0.7em;
+    }
+    .material-card .card-text {
+        color: #444;
+        font-size: 1.08rem;
+    }
+    .material-chip {
+        display: inline-block;
+        padding: 0.4em 1.1em;
+        border-radius: 999px;
+        background: #f1f1f1;
+        color: #222;
+        font-size: 0.95em;
+        margin: 0 0.2em 0.2em 0;
+    }
+    .material-chip.secondary {
+        background: #e0e0e0;
+        color: #222;
+    }
+    .card-img-top {
+        object-fit: cover;
+        height: 200px;
+        border-radius: 16px 16px 0 0;
+    }
+</style>
+<div class="container">
+    <div class="catalog-title">Product Catalog</div>
+    <div class="text-center mb-4">
+        <a href="{% url 'public_custom_designs' %}" class="btn btn-outline-primary">Browse Custom Designs</a>
+    </div>
+    {% if products %}
+        <div class="row g-4">
+        {% for product in products %}
+            {% if not product.name|slice:":7" == "Custom:" %}
+            <div class="col-md-4 mb-4">
+                <div class="material-card card h-100 text-center">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:200px;">
+                            <span class="text-muted">No image</span>
+                        </div>
                     {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">Price: ${{ product.price }}</p>
+                        <p class="card-text"><span class="material-chip secondary">Stock: {{ product.stock }}</span></p>
+                        {% if user.is_authenticated and not user.sellerprofile and product.stock > 0 %}
+                            <a href="{% url 'product_order' product.id %}" class="btn btn-primary">Order</a>
+                        {% elif product.stock <= 0 %}
+                            <span class="badge bg-danger">Out of stock</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
+            {% endif %}
+        {% endfor %}
         </div>
-        {% endif %}
-    {% endfor %}
-    </div>
-{% else %}
-    <p>No products available.</p>
-{% endif %}
+    {% else %}
+        <p class="text-center">No products available.</p>
+    {% endif %}
+</div>
 {% endblock %}

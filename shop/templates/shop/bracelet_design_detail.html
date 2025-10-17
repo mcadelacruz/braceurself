@@ -1,18 +1,45 @@
 {% extends 'shop/base.html' %}
 {% block content %}
-<h2>{{ design.name }}</h2>
-<button type="button" class="btn btn-outline-secondary mb-3" onclick="window.history.back();">Back</button>
-<div class="row mt-4">
-    <div class="col-md-5">
-        <label for="beadDropdown" class="form-label"><strong>Design Details:</strong></label>
-        <select id="beadDropdown" class="form-select" size="10" style="max-width:320px;">
-            {% for bead in design.text_form %}
-                <option>{{ bead }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-7 d-flex align-items-center justify-content-center">
-        <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
+<style>
+    .material-section-title {
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-weight: 700;
+        color: #111;
+        letter-spacing: 1px;
+        margin: 2.5rem 0 1.5rem 0;
+        font-size: 2.1rem;
+        text-align: center;
+    }
+    .material-card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        border: 1.5px solid #eee;
+        background: #fff;
+        transition: box-shadow .2s, transform .2s;
+    }
+    .material-card .card-body {
+        padding: 2rem 1.5rem;
+    }
+</style>
+<div class="container">
+    <div class="material-section-title">{{ design.name }}</div>
+    <button type="button" class="btn btn-outline-primary mb-3" onclick="window.history.back();">Back</button>
+    <div class="row mt-4">
+        <div class="col-md-5">
+            <label for="beadDropdown" class="form-label"><strong>Design Details:</strong></label>
+            <select id="beadDropdown" class="form-select" size="10" style="max-width:320px;">
+                {% for bead in design.text_form %}
+                    <option>{{ bead }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-7 d-flex align-items-center justify-content-center">
+            <div class="material-card card w-100">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <canvas id="bracelet-canvas" width="400" height="400" style="border:1px solid #ccc; background:#fff; border-radius:50%;"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <script>
