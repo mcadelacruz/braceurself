@@ -158,12 +158,85 @@
         .material-btn-link:hover {
             color: #222;
         }
-        @media (max-width: 768px) {
-            .material-card .card-body, .card .card-body, .material-surface {
-                padding: 1.2rem 0.8rem;
+        /* Responsive tweaks for mobile view */
+        @media (max-width: 600px) {
+            .container {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+            .navbar {
+                border-radius: 0;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
             }
             .navbar-brand {
-                font-size: 1.4rem;
+                font-size: 1.3rem;
+                letter-spacing: 1px;
+            }
+            .material-section-title {
+                font-size: 1.2rem;
+                margin: 1.2rem 0 1rem 0;
+            }
+            .material-card, .card {
+                border-radius: 10px;
+                box-shadow: 0 1px 4px 0 rgba(0,0,0,0.07);
+            }
+            .material-card .card-body, .card .card-body {
+                padding: 1rem 0.5rem;
+            }
+            .form-control, .form-select {
+                font-size: 1rem;
+                padding: 0.5rem 0.7rem;
+            }
+            .btn, .btn-primary, .btn-outline-primary {
+                font-size: 1rem;
+                padding: 0.5rem 1rem;
+            }
+            .row {
+                margin-left: 0;
+                margin-right: 0;
+            }
+            .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-3 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            .mb-4, .mt-4, .py-5 {
+                margin-bottom: 1rem !important;
+                margin-top: 1rem !important;
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+            }
+            .card-img-top, img {
+                height: 120px !important;
+            }
+            .bead-order-list {
+                max-height: 220px !important;
+                min-height: 60px !important;
+                padding-left: 2px !important;
+            }
+            .bead-order-item {
+                min-height: 28px !important;
+                font-size: 0.95em !important;
+            }
+            .shape-btn, .color-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 1em !important;
+            }
+            .bead-order-item .btn-xs {
+                height: 18px !important;
+                min-width: 18px !important;
+                font-size: 0.9em !important;
+            }
+            .material-divider {
+                margin: 1.2rem 0 1rem 0 !important;
+            }
+            .scroll-down {
+                font-size: 1.5rem !important;
+                bottom: 12px !important;
+            }
+            .hero-section h1 {
+                font-size: 2rem !important;
             }
         }
     </style>

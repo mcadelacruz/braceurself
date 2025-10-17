@@ -20,6 +20,101 @@
     .material-card .card-body {
         padding: 2rem 1.5rem;
     }
+    @media (max-width: 600px) {
+        .material-section-title {
+            font-size: 1.1rem !important;
+            margin: 1rem 0 0.7rem 0 !important;
+        }
+        .row.mt-4 {
+            margin-top: 0.7rem !important;
+            flex-direction: column !important;
+        }
+        .col-md-4, .col-md-5, .col-md-3 {
+            max-width: 100% !important;
+            flex: 0 0 100% !important;
+        }
+        .d-flex.flex-row.gap-3 {
+            flex-direction: column !important;
+            gap: 0.7rem !important;
+        }
+        .bead-order-list {
+            max-height: 180px !important;
+            min-height: 60px !important;
+            padding-left: 2px !important;
+        }
+        .bead-order-item {
+            min-height: 24px !important;
+            font-size: 0.93em !important;
+        }
+        .shape-btn, .color-btn {
+            width: 24px !important;
+            height: 24px !important;
+            font-size: 0.9em !important;
+        }
+        .bead-order-item .btn-xs {
+            height: 16px !important;
+            min-width: 16px !important;
+            font-size: 0.85em !important;
+        }
+        canvas {
+            width: 180px !important;
+            height: 180px !important;
+        }
+    }
+    .shape-btn, .color-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        border: 2px solid #888;
+        background: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3em;
+        cursor: pointer;
+        padding: 0;
+        transition: background .15s, border-color .15s;
+    }
+    .shape-btn.active, .color-btn.active {
+        border: 3px solid #333;
+        background: #e2e6ea;
+    }
+    .shape-btn:focus, .color-btn:focus {
+        outline: 2px solid #333;
+    }
+    .bead-order-item {
+        background: #f8f9fa;
+        border-radius: 6px;
+        min-height: 32px;
+        font-size: 0.97em;
+        border: 1px solid #e2e6ea;
+    }
+    .bead-order-item .btn-xs {
+        padding: 0 4px;
+        height: 20px;
+        min-width: 20px;
+        font-size: 0.95em;
+    }
+    .bead-order-item.dragging {
+        opacity: 0.5;
+        background: #f0f0f0;
+    }
+    .bead-order-item.drag-over {
+        border: 2px dashed #888;
+    }
+    .bead-order-item-canvas {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 50%;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    @media (max-width: 600px) {
+        .bead-order-item-canvas {
+            width: 16px !important;
+            height: 16px !important;
+        }
+    }
 </style>
 <div class="container">
     <div class="material-section-title">Design Your Bracelet</div>
@@ -225,9 +320,9 @@
             // Determine letter color: black if bead color is light, else white
             let letterColor = isLightColor(bead.color) ? "#000" : "#fff";
             beadDiv.innerHTML = `
-                <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;position:relative;">
-                    <canvas width="28" height="28" style="border-radius:50%;"></canvas>
-                    ${bead.letter ? `<span style="position:absolute;left:0;top:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1em;color:${letterColor};pointer-events:none;">${bead.letter}</span>` : ''}
+                <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;position:relative;">
+                    <canvas class="bead-order-item-canvas" width="20" height="20"></canvas>
+                    ${bead.letter ? `<span style="position:absolute;left:0;top:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.9em;color:${letterColor};pointer-events:none;">${bead.letter}</span>` : ''}
                 </div>
                 <div class="ms-1" style="font-size:0.90em;white-space:nowrap;">
                     ${bead.shape.charAt(0).toUpperCase()+bead.shape.slice(1)}, ${bead.size}
@@ -241,13 +336,13 @@
             // Draw bead preview with outline
             const beadCanvas = beadDiv.querySelector('canvas');
             const bctx = beadCanvas.getContext('2d');
-            bctx.clearRect(0,0,28,28);
+            bctx.clearRect(0,0,20,20);
             bctx.save();
-            bctx.translate(14,14);
+            bctx.translate(10,10);
             bctx.strokeStyle = "#888";
             bctx.lineWidth = 2;
             bctx.fillStyle = bead.color || "#888";
-            let size = bead.size === "large" ? 12 : bead.size === "medium" ? 9 : 6;
+            let size = bead.size === "large" ? 8 : bead.size === "medium" ? 6 : 4;
             if (bead.shape === "circle") {
                 bctx.beginPath();
                 bctx.arc(0, 0, size, 0, 2*Math.PI);
@@ -467,48 +562,5 @@
     drawBracelet();
     updateBeadOrder();
     </script>
-    <style>
-    .shape-btn, .color-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        border: 2px solid #888;
-        background: #fff;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3em;
-        cursor: pointer;
-        padding: 0;
-        transition: background .15s, border-color .15s;
-    }
-    .shape-btn.active, .color-btn.active {
-        border: 3px solid #333;
-        background: #e2e6ea;
-    }
-    .shape-btn:focus, .color-btn:focus {
-        outline: 2px solid #333;
-    }
-    .bead-order-item {
-        background: #f8f9fa;
-        border-radius: 6px;
-        min-height: 32px;
-        font-size: 0.97em;
-        border: 1px solid #e2e6ea;
-    }
-    .bead-order-item .btn-xs {
-        padding: 0 4px;
-        height: 20px;
-        min-width: 20px;
-        font-size: 0.95em;
-    }
-    .bead-order-item.dragging {
-        opacity: 0.5;
-        background: #f0f0f0;
-    }
-    .bead-order-item.drag-over {
-        border: 2px dashed #888;
-    }
-    </style>
 </div>
 {% endblock %}

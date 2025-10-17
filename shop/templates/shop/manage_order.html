@@ -20,6 +20,30 @@
     .material-card .card-body {
         padding: 2rem 1.5rem;
     }
+    @media (max-width: 600px) {
+        .material-section-title {
+            font-size: 1.1rem !important;
+            margin: 1rem 0 0.7rem 0 !important;
+        }
+        .card.material-card {
+            border-radius: 10px !important;
+            box-shadow: 0 1px 4px 0 rgba(0,0,0,0.07) !important;
+        }
+        .material-card .card-body {
+            padding: 1rem 0.5rem !important;
+        }
+        .row.align-items-start, .row {
+            flex-direction: column !important;
+        }
+        .col-md-7, .col-md-5 {
+            max-width: 100% !important;
+            flex: 0 0 100% !important;
+        }
+        canvas {
+            width: 80px !important;
+            height: 80px !important;
+        }
+    }
 </style>
 <div class="container">
     <div class="material-section-title">Manage Order #{{ order.id }}</div>
