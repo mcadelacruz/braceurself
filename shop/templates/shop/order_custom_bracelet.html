@@ -42,9 +42,12 @@
     }
 </style>
 <div class="container">
+    <!-- show order custom bracelet title -->
     <div class="material-section-title">Order Custom Bracelet</div>
+    <!-- show back button -->
     <button type="button" class="btn btn-outline-primary mb-3" onclick="window.history.back();">Back</button>
     <div class="row mb-3">
+        <!-- show design details and bead dropdown -->
         <div class="col-md-5">
             <strong>Design Name:</strong> {{ design.name }}<br>
             <label for="beadDropdown" class="form-label"><strong>Design Details:</strong></label>
@@ -54,6 +57,7 @@
                 {% endfor %}
             </select>
         </div>
+        <!-- show bracelet preview -->
         <div class="col-md-7 d-flex align-items-center justify-content-center">
             <div class="material-card card w-100">
                 <div class="card-body d-flex align-items-center justify-content-center">
@@ -62,6 +66,7 @@
             </div>
         </div>
     </div>
+    <!-- show order form -->
     <form method="post" class="mt-4">
         {% csrf_token %}
         <label for="payment_type" class="form-label">Payment Type</label>
@@ -73,6 +78,7 @@
         <a href="{% url 'customize_bracelet' %}" class="btn btn-link">Back to Designs</a>
     </form>
 </div>
+<!-- show bracelet preview script -->
 <script>
 function isLightColor(hex) {
     if (!hex) return false;

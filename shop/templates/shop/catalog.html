@@ -70,12 +70,15 @@
     }
 </style>
 <div class="container">
+    <!-- show catalog title -->
     <div class="catalog-title">Product Catalog</div>
+    <!-- show link to custom designs -->
     <div class="text-center mb-4">
         <a href="{% url 'public_custom_designs' %}" class="btn btn-outline-primary">Browse Custom Designs</a>
     </div>
     {% if products %}
         <div class="row g-4">
+        <!-- show product cards -->
         {% for product in products %}
             {% if not product.name|slice:":7" == "Custom:" %}
             <div class="col-md-4 mb-4">
@@ -103,6 +106,7 @@
         {% endfor %}
         </div>
     {% else %}
+        <!-- show no products message -->
         <p class="text-center">No products available.</p>
     {% endif %}
 </div>

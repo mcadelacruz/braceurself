@@ -46,18 +46,21 @@
     }
 </style>
 <div class="container">
+    <!-- show manage order title -->
     <div class="material-section-title">Manage Order #{{ order.id }}</div>
+    <!-- show back button -->
     <button type="button" class="btn btn-outline-primary mb-3" onclick="window.history.back();">Back</button>
     <div class="card material-card">
         <div class="card-body">
             <div class="row align-items-start">
+                <!-- show product image or custom design preview -->
                 <div class="col-md-7 d-flex flex-column align-items-center">
                     {% if order.product.image and not order.product.name|slice:":7" == "Custom:" %}
                         <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}"
                              class="mb-3 rounded"
                              style="width:100%;max-width:100%;height:220px;object-fit:cover;display:block;">
                     {% elif order.product.name|slice:":7" == "Custom:" %}
-                        <!-- No image for custom design -->
+                        <!-- no image for custom design -->
                     {% else %}
                         <div class="mb-3 rounded bg-light d-flex align-items-center justify-content-center"
                              style="width:100%;height:220px;">
@@ -65,6 +68,7 @@
                         </div>
                     {% endif %}
                     <div class="w-100">
+                        <!-- show product and custom design details -->
                         <p><strong>Product:</strong> {{ order.product.name }}</p>
                         {% if custom_design %}
                             <div class="row mb-2">
@@ -81,6 +85,7 @@
                                     </select>
                                 </div>
                             </div>
+                            <!-- show bracelet preview script for custom design -->
                             <script>
                             (function() {
                                 function isLightColor(hex) {
@@ -189,6 +194,7 @@
                             })();
                             </script>
                         {% endif %}
+                        <!-- show order details and status -->
                         <p><strong>Customer:</strong> {{ order.customer.username }}</p>
                         <p><strong>Quantity:</strong> {{ order.quantity }}</p>
                         <p><strong>Payment Type:</strong> {{ order.get_payment_type_display }}</p>
@@ -203,6 +209,7 @@
                             <div class="alert alert-danger">{{ error }}</div>
                         {% endif %}
                     </div>
+                    <!-- show status update form -->
                     <form method="post" class="w-100">
                         {% csrf_token %}
                         <div class="mb-3">
@@ -232,10 +239,11 @@
                         <button type="submit" class="btn btn-primary" {% if order.cancelled %}disabled{% endif %}>Update</button>
                     </form>
                 </div>
+                <!-- show messages area -->
                 <div class="col-md-5 border-start d-flex flex-column" style="height:100%;">
                     <div class="ps-3 d-flex flex-column h-100" style="height:100%;">
                         <h6 class="mb-2">Messages</h6>
-                        <!-- Messages area (plain style, compact controls) -->
+                        <!-- show messages list and controls -->
                         <style>
                         .seller-messages .messages-list {
                             min-height: 220px;
@@ -318,6 +326,7 @@
                                     <div class="text-muted">No messages yet.</div>
                                 {% endfor %}
                             </div>
+                            <!-- show message form -->
                             <form method="post" enctype="multipart/form-data" class="msg-controls mt-2">
                                 {% csrf_token %}
                                 {{ msg_form.non_field_errors }}

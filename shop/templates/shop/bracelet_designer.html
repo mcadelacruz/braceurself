@@ -117,7 +117,9 @@
     }
 </style>
 <div class="container">
+    <!-- show bracelet designer title -->
     <div class="material-section-title">Design Your Bracelet</div>
+    <!-- show bracelet designer form -->
     <form method="post" id="bracelet-save-form" class="mb-3">
         {% csrf_token %}
         <div class="mb-2">
@@ -128,13 +130,14 @@
         <button type="submit" class="btn btn-primary mt-2">Save Design</button>
     </form>
     <div class="row mt-4">
-        <!-- Left: Shape, Color, Size, Letter -->
+        <!-- show shape, color, size, letter pickers -->
         <div class="col-md-4">
             <div class="d-flex flex-row gap-3">
-                <!-- Shape Picker -->
+                <!-- show shape picker -->
                 <div>
                     <label class="form-label"><strong>Shape</strong></label>
                     <div id="bead-shapes" class="d-flex flex-wrap gap-2">
+                        <!-- show shape buttons -->
                         <button type="button" class="bead-shape shape-btn" data-shape="circle" title="Circle">&#9679;</button>
                         <button type="button" class="bead-shape shape-btn" data-shape="square" title="Square">&#9632;</button>
                         <button type="button" class="bead-shape shape-btn" data-shape="triangle" title="Triangle">&#9650;</button>
@@ -144,10 +147,11 @@
                         <button type="button" class="bead-shape shape-btn" data-shape="diamond" title="Diamond">&#9670;</button>
                     </div>
                 </div>
-                <!-- Color Picker -->
+                <!-- show color picker -->
                 <div>
                     <label class="form-label"><strong>Color</strong></label>
                     <div id="bead-colors" class="d-flex flex-wrap gap-2">
+                        <!-- show color buttons -->
                         <button type="button" class="color-btn" data-color="#ff0000" style="background:#ff0000;"></button>
                         <button type="button" class="color-btn" data-color="#0000ff" style="background:#0000ff;"></button>
                         <button type="button" class="color-btn" data-color="#00ff00" style="background:#00ff00;"></button>
@@ -166,7 +170,7 @@
                         <button type="button" class="color-btn" data-color="#B22222" style="background:#B22222;"></button>
                     </div>
                 </div>
-                <!-- Size, Letter, Add Bead -->
+                <!-- show size, letter, add bead controls -->
                 <div class="d-flex flex-column gap-2 align-items-start justify-content-end" style="min-width:110px;">
                     <div>
                         <label class="form-label"><strong>Size</strong></label>
@@ -184,21 +188,22 @@
                 </div>
             </div>
         </div>
-        <!-- Center: Bracelet Preview -->
+        <!-- show bracelet preview -->
         <div class="col-md-5 d-flex flex-column align-items-center">
             <h5>Bracelet Preview</h5>
             <canvas id="bracelet-canvas" width="400" height="400" style="border:1.5px solid #888; background:#fff; border-radius:50%;"></canvas>
         </div>
-        <!-- Right: Bead Order (vertical, draggable) -->
+        <!-- show bead order list -->
         <div class="col-md-3">
             <h6>Bead Order</h6>
             <div id="bead-order-scroll" class="bead-order-list" style="overflow-y:auto; max-height:420px; min-height:120px; border-left:1px solid #eee; padding-left:6px;">
-                <!-- Beads will be rendered here vertically -->
+                <!-- beads will be rendered here vertically -->
             </div>
             <span id="bead-count"></span>
             <span class="text-muted ms-2">(Min: 15, Max: 25 beads)</span>
         </div>
     </div>
+    <!-- show bracelet designer script -->
     <script>
     const beadShapes = document.querySelectorAll('.bead-shape');
     const colorBtns = document.querySelectorAll('.color-btn');

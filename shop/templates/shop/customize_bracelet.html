@@ -67,12 +67,15 @@
     }
 </style>
 <div class="container">
+    <!-- show custom bracelet designs title -->
     <div class="material-section-title">My Custom Bracelet Designs</div>
+    <!-- show create new design button -->
     <div class="text-center mb-4">
         <a href="{% url 'bracelet_designer' %}" class="btn btn-primary">Create New Design</a>
     </div>
     {% if designs %}
         <div class="row g-4">
+            <!-- show each custom design card -->
             {% for design in designs %}
                 <div class="col-md-4 mb-4">
                     <div class="material-card card h-100 text-center">
@@ -90,9 +93,10 @@
                             </div>
                         </div>
                     </div>
+                    <!-- show bracelet preview for each design -->
                     <script>
                     (function() {
-                        // Helper: returns true if color is "light"
+                        // helper: returns true if color is light
                         function isLightColor(hex) {
                             if (!hex) return false;
                             hex = hex.replace('#', '');
@@ -202,6 +206,7 @@
             {% endfor %}
         </div>
     {% else %}
+        <!-- show no designs message -->
         <div class="text-center text-muted">No designs yet.</div>
     {% endif %}
 </div>

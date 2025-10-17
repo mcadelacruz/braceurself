@@ -1,6 +1,7 @@
 {% extends 'shop/base.html' %}
 {% block content %}
 <style>
+    /* styles for public custom designs page and responsive tweaks */
     .material-section-title {
         font-family: 'Montserrat', Arial, sans-serif;
         font-weight: 700;
@@ -55,10 +56,13 @@
     }
 </style>
 <div class="container">
+    <!-- show public custom designs title -->
     <div class="material-section-title">Custom Designs by Other Customers</div>
+    <!-- show back button -->
     <button type="button" class="btn btn-outline-primary mb-3" onclick="window.history.back();">Back</button>
     {% if designs %}
         <div class="row g-4">
+            <!-- show each public custom design card -->
             {% for design in designs %}
                 <div class="col-md-4 mb-4">
                     <div class="material-card card h-100 text-center">
@@ -74,8 +78,10 @@
                             </div>
                         </div>
                     </div>
+                    <!-- show bracelet preview for each public design -->
                     <script>
                     (function() {
+                        // helper: returns true if color is light
                         function isLightColor(hex) {
                             if (!hex) return false;
                             hex = hex.replace('#', '');
@@ -185,6 +191,7 @@
             {% endfor %}
         </div>
     {% else %}
+        <!-- show no public designs message -->
         <div class="text-center text-muted">No public custom designs available.</div>
     {% endif %}
 </div>
